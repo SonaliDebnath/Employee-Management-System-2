@@ -1,5 +1,5 @@
-import { UserCircle, Users, Layers, ArrowUpDown, Plus } from 'lucide-react';
-import { designations, departments } from '../../../data/mockData';
+import { UserCircle, Users, ArrowUpDown, Plus } from 'lucide-react';
+import { designations } from '../../../data/mockData';
 
 export default function DesignationsTab() {
   const totalDesignations = designations.length;
