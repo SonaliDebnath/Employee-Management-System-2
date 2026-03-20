@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronDown, Filter, Maximize2, MoreHorizontal, X, Camera, Search, User, Briefcase, Shield, Phone, Heart, GraduationCap, Building2, Users, Check, Trash2, AlertTriangle } from 'lucide-react';
+import { ChevronDown, Filter, Maximize2, MoreHorizontal, X, Camera, Search, Check, Trash2, AlertTriangle, Upload } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { employees, departments, designations, subDepartments } from '../../../data/mockData';
 
@@ -27,6 +27,7 @@ const initialForm = {
   uan: '', pan: '', aadhaar: '',
   phone: '', extension: '', seatingLocation: '', address: '', permanentAddress: '',
   personalMobile: '', personalEmail: '',
+  bankName: '', accountNumber: '', ifsc: '', ctc: '',
   emergencyName: '', emergencyPhone: '', emergencyRelation: '',
   eduInstitute: '', eduDegree: '', eduSpecialization: '', eduCompletion: '',
   expCompany: '', expTitle: '', expFrom: '', expTo: '', expDescription: '',
@@ -34,16 +35,14 @@ const initialForm = {
 };
 type FormState = typeof initialForm;
 
-const formSections = [
-  'Personal Info', 'Work Info', 'Identity', 'Contact', 'Emergency', 'Education', 'Experience', 'Dependents',
-];
+// All sections shown on one scrollable page (Sorvi-style)
 
 export default function EmployeesTab() {
   const navigate = useNavigate();
   const [showAddModal, setShowAddModal] = useState(false);
   const [showFilter, setShowFilter] = useState(false);
   const [form, setForm] = useState<FormState>(initialForm);
-  const [activeFormSection, setActiveFormSection] = useState(0);
+  // activeFormSection removed — all sections on one scrollable page now
   const [addedEmployees, setAddedEmployees] = useState<typeof employees>([]);
   const [deletedIds, setDeletedIds] = useState<Set<string>>(new Set());
   const [statusOverrides, setStatusOverrides] = useState<Record<string, string>>({});
@@ -119,8 +118,8 @@ export default function EmployeesTab() {
       address: form.address || '-',
       emergencyContact: { name: form.emergencyName || '-', phone: form.emergencyPhone || '-', relation: form.emergencyRelation || '-' },
       reportingManager: form.reportingManager || '-', workLocation: form.workLocation || '-', shift: form.shift || 'General',
-      bankDetails: { bankName: '-', accountNumber: '-', ifsc: '-', pan: form.pan || '-' },
-      salary: { ctc: 0, basic: 0, hra: 0, special: 0, conveyance: 0, medical: 0, pf: 0, esi: 0, pt: 0, tds: 0 },
+      bankDetails: { bankName: form.bankName || '-', accountNumber: form.accountNumber || '-', ifsc: form.ifsc || '-', pan: form.pan || '-' },
+      salary: (() => { const c = Number(form.ctc) || 0; const basic = Math.round(c * 0.4 / 12); const hra = Math.round(basic * 0.4); return { ctc: c, basic, hra, special: Math.round((c/12) - basic - hra - 3000 - 2500 - Math.round(basic*0.12) - 640 - 200), conveyance: 3000, medical: 2500, pf: Math.round(basic*0.12), esi: 640, pt: 200, tds: 0 }; })(),
       performanceRating: 0, attendanceRate: 0,
       nickname: form.nickname || form.firstName, maritalStatus: form.maritalStatus || 'Single',
       aboutMe: form.aboutMe || '-', expertise: form.expertise || '-',
@@ -135,7 +134,6 @@ export default function EmployeesTab() {
     };
     setAddedEmployees(prev => [...prev, newEmp]);
     setForm(initialForm);
-    setActiveFormSection(0);
     setShowAddModal(false);
   };
 
@@ -412,240 +410,212 @@ export default function EmployeesTab() {
         </div>
       )}
 
-      {/* ===== ADD EMPLOYEE MODAL — slides in from right ===== */}
-      {showAddModal && (() => {
-        const stepIcons = [User, Briefcase, Shield, Phone, Heart, GraduationCap, Building2, Users];
-        return (
+      {/* ===== ADD EMPLOYEE — Right side panel, all sections scrollable like Sorvi ===== */}
+      {showAddModal && (
         <div className="fixed inset-0 z-50 flex justify-end">
-          <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
-          <div className="relative bg-white shadow-2xl w-full max-w-3xl h-full flex flex-col overflow-hidden">
-            {/* Header with gradient */}
-            <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 shrink-0">
-              <div className="flex items-center justify-between mb-1">
-                <h2 className="text-lg font-bold text-white">Add New Employee</h2>
-                <button onClick={() => setShowAddModal(false)} className="p-1.5 rounded-lg hover:bg-white/20 text-white/80 hover:text-white transition-colors"><X size={20} /></button>
+          <div className="absolute inset-0 bg-black/30" onClick={() => setShowAddModal(false)} />
+          <div className="relative bg-white shadow-2xl w-full max-w-3xl h-full flex flex-col">
+
+            {/* Breadcrumb bar */}
+            <div className="bg-gradient-to-r from-teal-50 to-green-50 border-b border-gray-200 px-6 py-2.5 flex items-center justify-between shrink-0">
+              <div className="flex items-center gap-1.5 text-[12px]">
+                <span className="text-gray-400 hover:text-gray-600 cursor-pointer">Employees</span>
+                <span className="text-gray-300">›</span>
+                <span className="text-gray-400 hover:text-gray-600 cursor-pointer">Employee Management</span>
+                <span className="text-gray-300">›</span>
+                <span className="text-gray-700 font-medium">Add Employee</span>
               </div>
-              <p className="text-indigo-200 text-xs">Step {activeFormSection + 1} of {formSections.length} — {formSections[activeFormSection]}</p>
+              <button onClick={() => setShowAddModal(false)} className="p-1 rounded hover:bg-gray-200/60 text-gray-400 hover:text-gray-600"><X size={18} /></button>
             </div>
 
-            {/* Horizontal Timeline Stepper */}
-            <div className="px-6 py-4 bg-gray-50 border-b border-gray-200 shrink-0 overflow-x-auto">
-              <div className="flex items-center min-w-max">
-                {formSections.map((s, i) => {
-                  const StepIcon = stepIcons[i];
-                  const isCompleted = i < activeFormSection;
-                  const isCurrent = i === activeFormSection;
-                  return (
-                    <div key={s} className="flex items-center">
-                      <button onClick={() => setActiveFormSection(i)} className="flex flex-col items-center gap-1.5 group relative">
-                        <div className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-200 ${
-                          isCompleted ? 'bg-green-500 text-white shadow-sm shadow-green-200' :
-                          isCurrent ? 'bg-indigo-600 text-white shadow-md shadow-indigo-200 ring-4 ring-indigo-100' :
-                          'bg-white text-gray-400 border-2 border-gray-200 group-hover:border-indigo-300 group-hover:text-indigo-400'
-                        }`}>
-                          {isCompleted ? <Check size={16} strokeWidth={3} /> : <StepIcon size={16} />}
-                        </div>
-                        <span className={`text-[10px] font-medium whitespace-nowrap transition-colors ${
-                          isCurrent ? 'text-indigo-600' : isCompleted ? 'text-green-600' : 'text-gray-400 group-hover:text-gray-600'
-                        }`}>{s}</span>
-                      </button>
-                      {i < formSections.length - 1 && (
-                        <div className={`w-10 h-0.5 mx-1 mt-[-18px] rounded-full transition-colors ${
-                          i < activeFormSection ? 'bg-green-400' : 'bg-gray-200'
-                        }`} />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
+            {/* Page title */}
+            <div className="px-6 pt-5 pb-4 shrink-0 bg-white">
+              <h1 className="text-[18px] font-bold text-gray-900">Create Employee</h1>
+              <p className="text-[13px] text-gray-400 mt-0.5">Fill in the details to add a new employee to the organization.</p>
             </div>
 
-            {/* Form content */}
-            <div className="flex-1 overflow-y-auto p-6">
-              {/* Section title */}
-              <div className="flex items-center gap-3 mb-5">
-                {(() => { const Icon = stepIcons[activeFormSection]; return <div className="p-2 bg-indigo-50 rounded-lg"><Icon size={18} className="text-indigo-600" /></div>; })()}
-                <div>
-                  <h3 className="text-sm font-semibold text-gray-900">{formSections[activeFormSection]}</h3>
-                  <p className="text-xs text-gray-400">
-                    {['Basic personal details & photo', 'Department, role & joining details', 'Government ID & tax information', 'Phone, email & address details', 'Emergency contact information', 'Educational qualifications', 'Previous work experience', 'Family & dependent details'][activeFormSection]}
-                  </p>
+            {/* Scrollable form — ALL sections visible */}
+            <div className="flex-1 overflow-y-auto px-6 pb-6 bg-white">
+
+              {/* PERSONAL DETAILS */}
+              <div className="flex items-center justify-between mt-4 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Personal Details</h3></div>
+              <div className="flex gap-6 mb-5">
+                <div className="shrink-0">
+                  <div onClick={() => fileRef.current?.click()} className="w-20 h-20 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors overflow-hidden">
+                    {form.photo ? <img src={form.photo} alt="" className="w-full h-full object-cover" /> : <div className="text-center"><Camera size={20} className="text-gray-400 mx-auto" /><p className="text-[10px] text-gray-400 mt-0.5">Upload</p></div>}
+                  </div>
+                  <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
+                  {form.photo && <button onClick={() => updateField('photo', null)} className="text-[10px] text-red-500 mt-1 block mx-auto">Remove</button>}
+                </div>
+                <div className="flex-1 grid grid-cols-2 gap-x-5 gap-y-4">
+                  <Field label="First Name" required><input className={inputCls} value={form.firstName} onChange={e => updateField('firstName', e.target.value)} placeholder="John" /></Field>
+                  <Field label="Last Name" required><input className={inputCls} value={form.lastName} onChange={e => updateField('lastName', e.target.value)} placeholder="Doe" /></Field>
+                  <Field label="Nick Name"><input className={inputCls} value={form.nickname} onChange={e => updateField('nickname', e.target.value)} placeholder="Johnny" /></Field>
+                  <Field label="Email Address" required><input className={inputCls} type="email" value={form.email} onChange={e => updateField('email', e.target.value)} placeholder="john@jexa.com" /></Field>
                 </div>
               </div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Date of Birth"><input className={inputCls} type="date" value={form.dateOfBirth} onChange={e => updateField('dateOfBirth', e.target.value)} /></Field>
+                <Field label="Gender"><select className={inputCls} value={form.gender} onChange={e => updateField('gender', e.target.value)}><option>Male</option><option>Female</option><option>Other</option></select></Field>
+                <Field label="Marital Status"><select className={inputCls} value={form.maritalStatus} onChange={e => updateField('maritalStatus', e.target.value)}><option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option></select></Field>
+                <Field label="About Me"><textarea className={inputCls} rows={2} value={form.aboutMe} onChange={e => updateField('aboutMe', e.target.value)} placeholder="Short bio..." /></Field>
+                <Field label="Expertise"><textarea className={inputCls} rows={2} value={form.expertise} onChange={e => updateField('expertise', e.target.value)} placeholder="Skills & expertise..." /></Field>
+              </div>
 
-              {/* Personal Info */}
-              {activeFormSection === 0 && (
-                <div>
-                  <div className="flex gap-6 mb-6">
-                    <div className="shrink-0">
-                      <div onClick={() => fileRef.current?.click()}
-                        className="w-24 h-24 rounded-full border-2 border-dashed border-gray-300 flex items-center justify-center cursor-pointer hover:border-indigo-400 hover:bg-indigo-50 transition-colors overflow-hidden">
-                        {form.photo ? (
-                          <img src={form.photo} alt="Preview" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="text-center"><Camera size={22} className="text-gray-400 mx-auto" /><p className="text-[10px] text-gray-400 mt-0.5">Upload</p></div>
-                        )}
-                      </div>
-                      <input ref={fileRef} type="file" accept="image/*" className="hidden" onChange={handlePhotoChange} />
-                      {form.photo && <button onClick={() => updateField('photo', null)} className="text-[10px] text-red-500 mt-1 block mx-auto">Remove</button>}
-                    </div>
-                    <div className="flex-1 grid grid-cols-2 gap-x-5 gap-y-4">
-                      <Field label="First Name" required><input className={inputCls} value={form.firstName} onChange={e => updateField('firstName', e.target.value)} placeholder="John" /></Field>
-                      <Field label="Last Name" required><input className={inputCls} value={form.lastName} onChange={e => updateField('lastName', e.target.value)} placeholder="Doe" /></Field>
-                      <Field label="Nick Name"><input className={inputCls} value={form.nickname} onChange={e => updateField('nickname', e.target.value)} placeholder="Johnny" /></Field>
-                      <Field label="Email Address" required><input className={inputCls} type="email" value={form.email} onChange={e => updateField('email', e.target.value)} placeholder="john@jexa.com" /></Field>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-3 gap-x-5 gap-y-4">
-                    <Field label="Date of Birth"><input className={inputCls} type="date" value={form.dateOfBirth} onChange={e => updateField('dateOfBirth', e.target.value)} /></Field>
-                    <Field label="Gender">
-                      <select className={inputCls} value={form.gender} onChange={e => updateField('gender', e.target.value)}><option>Male</option><option>Female</option><option>Other</option></select>
-                    </Field>
-                    <Field label="Marital Status">
-                      <select className={inputCls} value={form.maritalStatus} onChange={e => updateField('maritalStatus', e.target.value)}><option>Single</option><option>Married</option><option>Divorced</option><option>Widowed</option></select>
-                    </Field>
-                    <Field label="About Me"><textarea className={inputCls} rows={2} value={form.aboutMe} onChange={e => updateField('aboutMe', e.target.value)} placeholder="Short bio..." /></Field>
-                    <Field label="Expertise"><textarea className={inputCls} rows={2} value={form.expertise} onChange={e => updateField('expertise', e.target.value)} placeholder="Skills..." /></Field>
-                  </div>
-                </div>
-              )}
-
-              {/* Work Info */}
-              {activeFormSection === 1 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="Department" required>
-                    <select className={inputCls} value={form.department} onChange={e => { updateField('department', e.target.value); updateField('designation', ''); updateField('subDepartment', ''); }}>
-                      <option value="">Select department</option>
-                      {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+              {/* WORK INFORMATION */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Work Information</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Department" required>
+                  <select className={inputCls} value={form.department} onChange={e => { updateField('department', e.target.value); updateField('designation', ''); updateField('subDepartment', ''); }}>
+                    <option value="">Select department</option>
+                    {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                  </select>
+                </Field>
+                {deptSubDepts.length > 0 ? (
+                  <Field label="Sub-department">
+                    <select className={inputCls} value={form.subDepartment} onChange={e => updateField('subDepartment', e.target.value)}>
+                      <option value="">Select sub-department</option>
+                      {deptSubDepts.map(sd => <option key={sd.id} value={sd.name}>{sd.name}</option>)}
                     </select>
                   </Field>
-                  {deptSubDepts.length > 0 && (
-                    <Field label="Sub-department">
-                      <select className={inputCls} value={form.subDepartment} onChange={e => updateField('subDepartment', e.target.value)}>
-                        <option value="">Select sub-department</option>
-                        {deptSubDepts.map(sd => <option key={sd.id} value={sd.name}>{sd.name}</option>)}
-                      </select>
-                    </Field>
-                  )}
+                ) : (
                   <Field label="Designation" required>
                     <select className={inputCls} value={form.designation} onChange={e => updateField('designation', e.target.value)}>
                       <option value="">Select designation</option>
                       {deptDesignations.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
-                      <option value="_custom">-- Enter custom --</option>
-                    </select>
-                    {form.designation === '_custom' && (
-                      <input className={`${inputCls} mt-2`} placeholder="Enter designation" onChange={e => updateField('designation', e.target.value)} />
-                    )}
-                  </Field>
-                  <Field label="Employment Type">
-                    <select className={inputCls} value={form.type} onChange={e => updateField('type', e.target.value)}><option>Full-Time</option><option>Contract</option><option>Intern</option><option>Part-Time</option></select>
-                  </Field>
-                  <Field label="Date of Joining"><input className={inputCls} type="date" value={form.joinDate} onChange={e => updateField('joinDate', e.target.value)} /></Field>
-                  <Field label="Reporting Manager">
-                    <select className={inputCls} value={form.reportingManager} onChange={e => updateField('reportingManager', e.target.value)}>
-                      <option value="">Select manager</option>
-                      {employees.map(e => <option key={e.id} value={e.name}>{e.name} — {e.designation}</option>)}
                     </select>
                   </Field>
-                  <Field label="Work Location"><input className={inputCls} value={form.workLocation} onChange={e => updateField('workLocation', e.target.value)} placeholder="e.g. Bangalore HQ" /></Field>
-                  <Field label="Shift">
-                    <select className={inputCls} value={form.shift} onChange={e => updateField('shift', e.target.value)}><option>General</option><option>Morning</option><option>Night</option><option>Flexible</option></select>
+                )}
+                {deptSubDepts.length > 0 && (
+                  <Field label="Designation" required>
+                    <select className={inputCls} value={form.designation} onChange={e => updateField('designation', e.target.value)}>
+                      <option value="">Select designation</option>
+                      {deptDesignations.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
+                    </select>
                   </Field>
-                  <Field label="Source of Hire">
-                    <select className={inputCls} value={form.sourceOfHire} onChange={e => updateField('sourceOfHire', e.target.value)}><option value="">Select</option><option>LinkedIn</option><option>Referral</option><option>Job Portal</option><option>Direct</option><option>Campus</option></select>
-                  </Field>
-                  <Field label="Total Experience"><input className={inputCls} value={form.totalExperience} onChange={e => updateField('totalExperience', e.target.value)} placeholder="e.g. 5 year(s)" /></Field>
+                )}
+                <Field label="Employment Type"><select className={inputCls} value={form.type} onChange={e => updateField('type', e.target.value)}><option>Full-Time</option><option>Contract</option><option>Intern</option><option>Part-Time</option></select></Field>
+                <Field label="Date of Joining"><input className={inputCls} type="date" value={form.joinDate} onChange={e => updateField('joinDate', e.target.value)} /></Field>
+                <Field label="Reporting Manager">
+                  <select className={inputCls} value={form.reportingManager} onChange={e => updateField('reportingManager', e.target.value)}>
+                    <option value="">Select manager</option>
+                    {employees.map(e => <option key={e.id} value={e.name}>{e.name} — {e.designation}</option>)}
+                  </select>
+                </Field>
+                <Field label="Work Location"><input className={inputCls} value={form.workLocation} onChange={e => updateField('workLocation', e.target.value)} placeholder="e.g. Bangalore HQ" /></Field>
+                <Field label="Shift"><select className={inputCls} value={form.shift} onChange={e => updateField('shift', e.target.value)}><option>General</option><option>Morning</option><option>Night</option><option>Flexible</option></select></Field>
+                <Field label="Source of Hire"><select className={inputCls} value={form.sourceOfHire} onChange={e => updateField('sourceOfHire', e.target.value)}><option value="">Select</option><option>LinkedIn</option><option>Referral</option><option>Job Portal</option><option>Direct</option><option>Campus</option></select></Field>
+                <Field label="Total Experience"><input className={inputCls} value={form.totalExperience} onChange={e => updateField('totalExperience', e.target.value)} placeholder="e.g. 5 year(s)" /></Field>
+              </div>
+
+              {/* IDENTITY INFORMATION */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Identity Information</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="UAN"><input className={inputCls} value={form.uan} onChange={e => updateField('uan', e.target.value)} placeholder="Universal Account Number" /></Field>
+                <Field label="PAN"><input className={inputCls} value={form.pan} onChange={e => updateField('pan', e.target.value)} placeholder="ABCDE1234F" /></Field>
+                <Field label="Aadhaar"><input className={inputCls} value={form.aadhaar} onChange={e => updateField('aadhaar', e.target.value)} placeholder="XXXX XXXX XXXX" /></Field>
+              </div>
+
+              {/* CONTACT DETAILS */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Contact Details</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Work Phone"><input className={inputCls} value={form.phone} onChange={e => updateField('phone', e.target.value)} placeholder="+91 98765 43210" /></Field>
+                <Field label="Extension"><input className={inputCls} value={form.extension} onChange={e => updateField('extension', e.target.value)} placeholder="5" /></Field>
+                <Field label="Seating Location"><input className={inputCls} value={form.seatingLocation} onChange={e => updateField('seatingLocation', e.target.value)} placeholder="FL_ENG_12" /></Field>
+                <Field label="Personal Mobile"><input className={inputCls} value={form.personalMobile} onChange={e => updateField('personalMobile', e.target.value)} /></Field>
+                <Field label="Personal Email"><input className={inputCls} type="email" value={form.personalEmail} onChange={e => updateField('personalEmail', e.target.value)} /></Field>
+                <div />
+                <div className="col-span-2"><Field label="Present Address"><textarea className={inputCls} rows={2} value={form.address} onChange={e => updateField('address', e.target.value)} /></Field></div>
+                <div className="col-span-2"><Field label="Permanent Address"><textarea className={inputCls} rows={2} value={form.permanentAddress} onChange={e => updateField('permanentAddress', e.target.value)} /></Field></div>
+              </div>
+
+              {/* EMERGENCY CONTACT */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Emergency Contact</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Contact Name"><input className={inputCls} value={form.emergencyName} onChange={e => updateField('emergencyName', e.target.value)} /></Field>
+                <Field label="Phone"><input className={inputCls} value={form.emergencyPhone} onChange={e => updateField('emergencyPhone', e.target.value)} /></Field>
+                <Field label="Relationship"><select className={inputCls} value={form.emergencyRelation} onChange={e => updateField('emergencyRelation', e.target.value)}><option value="">Select</option><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Friend</option><option>Other</option></select></Field>
+              </div>
+
+              {/* EDUCATION */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Education</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Institute"><input className={inputCls} value={form.eduInstitute} onChange={e => updateField('eduInstitute', e.target.value)} /></Field>
+                <Field label="Degree / Diploma"><input className={inputCls} value={form.eduDegree} onChange={e => updateField('eduDegree', e.target.value)} /></Field>
+                <Field label="Specialization"><input className={inputCls} value={form.eduSpecialization} onChange={e => updateField('eduSpecialization', e.target.value)} /></Field>
+                <Field label="Completion Date"><input className={inputCls} value={form.eduCompletion} onChange={e => updateField('eduCompletion', e.target.value)} placeholder="2020" /></Field>
+              </div>
+
+              {/* WORK EXPERIENCE */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Work Experience</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Company"><input className={inputCls} value={form.expCompany} onChange={e => updateField('expCompany', e.target.value)} /></Field>
+                <Field label="Job Title"><input className={inputCls} value={form.expTitle} onChange={e => updateField('expTitle', e.target.value)} /></Field>
+                <Field label="From"><input className={inputCls} type="date" value={form.expFrom} onChange={e => updateField('expFrom', e.target.value)} /></Field>
+                <Field label="To"><input className={inputCls} type="date" value={form.expTo} onChange={e => updateField('expTo', e.target.value)} /></Field>
+                <div className="col-span-2"><Field label="Description"><textarea className={inputCls} rows={2} value={form.expDescription} onChange={e => updateField('expDescription', e.target.value)} /></Field></div>
+              </div>
+
+              {/* BANK & SALARY */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Bank & Salary Details</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Bank Name"><input className={inputCls} value={form.bankName} onChange={e => updateField('bankName', e.target.value)} placeholder="e.g. HDFC Bank" /></Field>
+                <Field label="Account Number"><input className={inputCls} value={form.accountNumber} onChange={e => updateField('accountNumber', e.target.value)} placeholder="1234567890" /></Field>
+                <Field label="IFSC Code"><input className={inputCls} value={form.ifsc} onChange={e => updateField('ifsc', e.target.value)} placeholder="HDFC0001234" /></Field>
+                <Field label="CTC (Annual)"><input className={inputCls} type="number" value={form.ctc} onChange={e => updateField('ctc', e.target.value)} placeholder="e.g. 1800000" /></Field>
+              </div>
+              {form.ctc && Number(form.ctc) > 0 && (
+                <div className="p-3 bg-gray-50 rounded-lg border border-gray-200 mt-3 mb-2">
+                  <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2">Salary Breakdown (Auto-calculated)</p>
+                  <div className="grid grid-cols-4 gap-3 text-[12px]">
+                    <div><span className="text-gray-400">Basic</span><p className="text-gray-700 font-medium">{Math.round(Number(form.ctc) * 0.4 / 12).toLocaleString()}/mo</p></div>
+                    <div><span className="text-gray-400">HRA</span><p className="text-gray-700 font-medium">{Math.round(Number(form.ctc) * 0.4 / 12 * 0.4).toLocaleString()}/mo</p></div>
+                    <div><span className="text-gray-400">PF</span><p className="text-gray-700 font-medium">{Math.round(Number(form.ctc) * 0.4 / 12 * 0.12).toLocaleString()}/mo</p></div>
+                    <div><span className="text-gray-400">Monthly Gross</span><p className="text-gray-700 font-medium">{Math.round(Number(form.ctc) / 12).toLocaleString()}/mo</p></div>
+                  </div>
                 </div>
               )}
 
-              {/* Identity */}
-              {activeFormSection === 2 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="UAN"><input className={inputCls} value={form.uan} onChange={e => updateField('uan', e.target.value)} placeholder="Universal Account Number" /></Field>
-                  <Field label="PAN"><input className={inputCls} value={form.pan} onChange={e => updateField('pan', e.target.value)} placeholder="ABCDE1234F" /></Field>
-                  <Field label="Aadhaar"><input className={inputCls} value={form.aadhaar} onChange={e => updateField('aadhaar', e.target.value)} placeholder="XXXX XXXX XXXX" /></Field>
-                </div>
-              )}
+              {/* DEPENDENTS */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Dependents</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-x-5 gap-y-4 mb-2">
+                <Field label="Name"><input className={inputCls} value={form.depName} onChange={e => updateField('depName', e.target.value)} /></Field>
+                <Field label="Relationship"><select className={inputCls} value={form.depRelation} onChange={e => updateField('depRelation', e.target.value)}><option value="">Select</option><option>Spouse</option><option>Child</option><option>Parent</option><option>Sibling</option></select></Field>
+                <Field label="Date of Birth"><input className={inputCls} type="date" value={form.depDob} onChange={e => updateField('depDob', e.target.value)} /></Field>
+              </div>
 
-              {/* Contact */}
-              {activeFormSection === 3 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="Work Phone"><input className={inputCls} value={form.phone} onChange={e => updateField('phone', e.target.value)} placeholder="+91 98765 43210" /></Field>
-                  <Field label="Extension"><input className={inputCls} value={form.extension} onChange={e => updateField('extension', e.target.value)} placeholder="5" /></Field>
-                  <Field label="Seating Location"><input className={inputCls} value={form.seatingLocation} onChange={e => updateField('seatingLocation', e.target.value)} placeholder="FL_ENG_12" /></Field>
-                  <Field label="Personal Mobile"><input className={inputCls} value={form.personalMobile} onChange={e => updateField('personalMobile', e.target.value)} /></Field>
-                  <Field label="Personal Email"><input className={inputCls} type="email" value={form.personalEmail} onChange={e => updateField('personalEmail', e.target.value)} /></Field>
-                  <div />
-                  <div className="col-span-2"><Field label="Present Address"><textarea className={inputCls} rows={2} value={form.address} onChange={e => updateField('address', e.target.value)} /></Field></div>
-                  <div className="col-span-2"><Field label="Permanent Address"><textarea className={inputCls} rows={2} value={form.permanentAddress} onChange={e => updateField('permanentAddress', e.target.value)} /></Field></div>
-                </div>
-              )}
-
-              {/* Emergency */}
-              {activeFormSection === 4 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="Contact Name"><input className={inputCls} value={form.emergencyName} onChange={e => updateField('emergencyName', e.target.value)} /></Field>
-                  <Field label="Phone"><input className={inputCls} value={form.emergencyPhone} onChange={e => updateField('emergencyPhone', e.target.value)} /></Field>
-                  <Field label="Relationship">
-                    <select className={inputCls} value={form.emergencyRelation} onChange={e => updateField('emergencyRelation', e.target.value)}><option value="">Select</option><option>Spouse</option><option>Parent</option><option>Sibling</option><option>Friend</option><option>Other</option></select>
-                  </Field>
-                </div>
-              )}
-
-              {/* Education */}
-              {activeFormSection === 5 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="Institute"><input className={inputCls} value={form.eduInstitute} onChange={e => updateField('eduInstitute', e.target.value)} /></Field>
-                  <Field label="Degree / Diploma"><input className={inputCls} value={form.eduDegree} onChange={e => updateField('eduDegree', e.target.value)} /></Field>
-                  <Field label="Specialization"><input className={inputCls} value={form.eduSpecialization} onChange={e => updateField('eduSpecialization', e.target.value)} /></Field>
-                  <Field label="Completion Date"><input className={inputCls} value={form.eduCompletion} onChange={e => updateField('eduCompletion', e.target.value)} placeholder="2020" /></Field>
-                </div>
-              )}
-
-              {/* Experience */}
-              {activeFormSection === 6 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="Company"><input className={inputCls} value={form.expCompany} onChange={e => updateField('expCompany', e.target.value)} /></Field>
-                  <Field label="Job Title"><input className={inputCls} value={form.expTitle} onChange={e => updateField('expTitle', e.target.value)} /></Field>
-                  <Field label="From"><input className={inputCls} type="date" value={form.expFrom} onChange={e => updateField('expFrom', e.target.value)} /></Field>
-                  <Field label="To"><input className={inputCls} type="date" value={form.expTo} onChange={e => updateField('expTo', e.target.value)} /></Field>
-                  <div className="col-span-2"><Field label="Description"><textarea className={inputCls} rows={2} value={form.expDescription} onChange={e => updateField('expDescription', e.target.value)} /></Field></div>
-                </div>
-              )}
-
-              {/* Dependents */}
-              {activeFormSection === 7 && (
-                <div className="grid grid-cols-2 gap-x-5 gap-y-4">
-                  <Field label="Name"><input className={inputCls} value={form.depName} onChange={e => updateField('depName', e.target.value)} /></Field>
-                  <Field label="Relationship">
-                    <select className={inputCls} value={form.depRelation} onChange={e => updateField('depRelation', e.target.value)}><option value="">Select</option><option>Spouse</option><option>Child</option><option>Parent</option><option>Sibling</option></select>
-                  </Field>
-                  <Field label="Date of Birth"><input className={inputCls} type="date" value={form.depDob} onChange={e => updateField('depDob', e.target.value)} /></Field>
-                </div>
-              )}
+              {/* DOCUMENTS */}
+              <div className="flex items-center justify-between mt-6 mb-4 pb-2 border-b border-gray-200"><h3 className="text-[13px] font-bold text-gray-800 uppercase tracking-wide">Documents</h3><button type="button" className="text-[11px] text-indigo-500 hover:text-indigo-700 font-medium">Edit</button></div>
+              <div className="grid grid-cols-2 gap-3 mb-4">
+                {['Aadhaar Card', 'PAN Card', 'Offer Letter', 'Resume / CV', 'Educational Certificates', 'Address Proof', 'Bank Passbook / Cheque', 'Relieving Letter', 'Experience Letter'].map(doc => (
+                  <div key={doc} className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-gray-300 bg-gray-50 hover:border-indigo-300 hover:bg-indigo-50/30 transition-colors cursor-pointer">
+                    <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
+                      <Upload size={14} className="text-gray-400" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-[13px] font-medium text-gray-700">{doc}</p>
+                      <p className="text-[11px] text-gray-400">Click to upload (.pdf, .jpg, .png)</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
 
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 shrink-0">
-            <div>
-              {activeFormSection > 0 && (
-                <button onClick={() => setActiveFormSection(i => i - 1)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">Previous</button>
-              )}
+            {/* Bottom bar — like Sorvi */}
+            <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white shrink-0">
+              <div className="text-[12px] text-gray-400 flex items-center gap-1.5 cursor-pointer hover:text-gray-600">
+                <Upload size={14} /> Attachments
+              </div>
+              <div className="flex gap-3">
+                <button onClick={() => { setForm(initialForm); setShowAddModal(false); }} className="px-4 py-2 text-[13px] text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">Cancel</button>
+                <button onClick={handleSubmit} className="px-5 py-2 text-[13px] bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">Save Employee</button>
+              </div>
             </div>
-            <div className="flex gap-3">
-              <button onClick={() => { setForm(initialForm); setShowAddModal(false); }} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
-              {activeFormSection < formSections.length - 1 ? (
-                <button onClick={() => setActiveFormSection(i => i + 1)} className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">Next</button>
-              ) : (
-                <button onClick={handleSubmit} className="px-5 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">Add Employee</button>
-              )}
-            </div>
+
           </div>
         </div>
-        );
-      })()}
+      )}
     </div>
   );
 }

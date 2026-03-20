@@ -22,7 +22,7 @@ export default function AdminLeave() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Leave Management</h1>
+      <h1 className="text-[18px] font-bold text-gray-900 mb-4">Leave Management</h1>
 
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6">
         {leaveBalances.map(lb => (

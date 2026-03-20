@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, X, ChevronLeft, ChevronRight, ChevronDown, UserCog, BarChart3, Building2, Award } from 'lucide-react';
+import { LayoutDashboard, Users, X, ChevronLeft, ChevronRight, ChevronDown, UserCog, BarChart3, Building2, Award, Clock, CalendarDays } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -161,6 +161,36 @@ export default function Sidebar({ isOpen, collapsed, onClose, onToggleCollapse }
               <Users size={18} />
             </NavLink>
           )}
+
+          {/* Attendance */}
+          <NavLink
+            to="/attendance"
+            onClick={onClose}
+            style={({ isActive }) => ({
+              ...linkStyle(isActive),
+              justifyContent: collapsed ? 'center' : undefined,
+              padding: collapsed ? '10px' : '10px 14px',
+            })}
+            title={collapsed ? 'Attendance' : undefined}
+          >
+            <Clock size={18} />
+            {!collapsed && <span className="flex-1 truncate">Attendance</span>}
+          </NavLink>
+
+          {/* Leave */}
+          <NavLink
+            to="/leave"
+            onClick={onClose}
+            style={({ isActive }) => ({
+              ...linkStyle(isActive),
+              justifyContent: collapsed ? 'center' : undefined,
+              padding: collapsed ? '10px' : '10px 14px',
+            })}
+            title={collapsed ? 'Leave' : undefined}
+          >
+            <CalendarDays size={18} />
+            {!collapsed && <span className="flex-1 truncate">Leave</span>}
+          </NavLink>
         </nav>
 
         {/* Collapse toggle */}

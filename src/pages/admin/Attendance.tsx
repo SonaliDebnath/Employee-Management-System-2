@@ -78,7 +78,7 @@ export default function AdminAttendance() {
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-gray-900 mb-6">Attendance</h1>
+      <h1 className="text-[18px] font-bold text-gray-900 mb-4">Attendance</h1>
 
       {/* Time Tracker */}
       <div className="bg-white rounded-lg border border-gray-200 p-5 mb-6">
@@ -124,7 +124,7 @@ export default function AdminAttendance() {
                   value={searchName}
                   onChange={e => setSearchName(e.target.value)}
                   placeholder="Search by employee name..."
-                  className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  className="w-full pl-9 pr-4 py-1.5 border border-gray-200 rounded-md text-[13px] focus:outline-none focus:ring-1 focus:ring-indigo-500 bg-white"
                 />
               </div>
 
@@ -132,7 +132,7 @@ export default function AdminAttendance() {
               <select
                 value={filterDept}
                 onChange={e => setFilterDept(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-2.5 py-1.5 border border-gray-200 rounded-md text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">All Departments</option>
                 {departments.map(d => (
@@ -144,7 +144,7 @@ export default function AdminAttendance() {
               <select
                 value={filterMonth}
                 onChange={e => setFilterMonth(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-2.5 py-1.5 border border-gray-200 rounded-md text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">All Months</option>
                 <option value="3">March 2026</option>
@@ -156,7 +156,7 @@ export default function AdminAttendance() {
               <select
                 value={filterStatus}
                 onChange={e => setFilterStatus(e.target.value)}
-                className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                className="px-2.5 py-1.5 border border-gray-200 rounded-md text-[13px] bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500"
               >
                 <option value="">All Statuses</option>
                 {['Present', 'Absent', 'Late', 'WFH', 'Leave', 'Weekend', 'Half Day'].map(s => (

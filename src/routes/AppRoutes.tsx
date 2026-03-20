@@ -23,6 +23,10 @@ import DepartmentDetail from '../pages/admin/DepartmentDetail';
 import SubDepartmentDetail from '../pages/admin/SubDepartmentDetail';
 import UserProfile from '../pages/admin/UserProfile';
 
+// Admin — Attendance & Leave
+import AdminAttendance from '../pages/admin/Attendance';
+import AdminLeave from '../pages/admin/Leave';
+
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
   if (!isAuthenticated) return <Navigate to="/signin" replace />;
@@ -55,6 +59,9 @@ export default function AppRoutes() {
           <Route path="departments/:deptId/:subDeptId" element={<SubDepartmentDetail />} />
           <Route path="user-operations/:id" element={<UserProfile />} />
         </Route>
+
+        <Route path="/attendance" element={<AdminAttendance />} />
+        <Route path="/leave" element={<AdminLeave />} />
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>
