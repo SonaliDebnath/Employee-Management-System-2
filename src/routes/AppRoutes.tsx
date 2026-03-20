@@ -23,9 +23,18 @@ import DepartmentDetail from '../pages/admin/DepartmentDetail';
 import SubDepartmentDetail from '../pages/admin/SubDepartmentDetail';
 import UserProfile from '../pages/admin/UserProfile';
 
-// Admin — Attendance & Leave
+// Attendance
 import AdminAttendance from '../pages/admin/Attendance';
-import AdminLeave from '../pages/admin/Leave';
+
+// Leave Management
+import LeaveManagement from '../pages/admin/LeaveManagement';
+import ApplyLeaveTab from '../pages/admin/tabs/ApplyLeaveTab';
+import ApprovalsTab from '../pages/admin/tabs/ApprovalsTab';
+import LeaveHistoryTab from '../pages/admin/tabs/LeaveHistoryTab';
+import LeaveBalanceTab from '../pages/admin/tabs/LeaveBalanceTab';
+import LeavePoliciesTab from '../pages/admin/tabs/LeavePoliciesTab';
+import HolidayCalendarTab from '../pages/admin/tabs/HolidayCalendarTab';
+import LeaveReportsTab from '../pages/admin/tabs/LeaveReportsTab';
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useAuth();
@@ -61,7 +70,16 @@ export default function AppRoutes() {
         </Route>
 
         <Route path="/attendance" element={<AdminAttendance />} />
-        <Route path="/leave" element={<AdminLeave />} />
+
+        <Route path="/leave-management" element={<LeaveManagement />}>
+          <Route index element={<ApplyLeaveTab />} />
+          <Route path="approvals" element={<ApprovalsTab />} />
+          <Route path="history" element={<LeaveHistoryTab />} />
+          <Route path="balance" element={<LeaveBalanceTab />} />
+          <Route path="policies" element={<LeavePoliciesTab />} />
+          <Route path="holidays" element={<HolidayCalendarTab />} />
+          <Route path="reports" element={<LeaveReportsTab />} />
+        </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
       </Route>

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, X, ChevronLeft, ChevronRight, ChevronDown, UserCog, BarChart3, Building2, Award, Clock, CalendarDays } from 'lucide-react';
+import { LayoutDashboard, Users, X, ChevronLeft, ChevronRight, ChevronDown, UserCog, BarChart3, Building2, Award, Clock, CalendarDays, CalendarPlus, CheckSquare, History, Scale, FileText } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -17,10 +17,22 @@ const empSubItems = [
   { to: '/employee-management/designations', label: 'Designations', icon: Award },
 ];
 
+const leaveSubItems = [
+  { to: '/leave-management', label: 'Apply Leave', icon: CalendarPlus, end: true },
+  { to: '/leave-management/approvals', label: 'Approvals', icon: CheckSquare },
+  { to: '/leave-management/history', label: 'Leave History', icon: History },
+  { to: '/leave-management/balance', label: 'Leave Balance', icon: Scale },
+  { to: '/leave-management/policies', label: 'Leave Policies', icon: FileText },
+  { to: '/leave-management/holidays', label: 'Holiday Calendar', icon: CalendarDays },
+  { to: '/leave-management/reports', label: 'Reports', icon: BarChart3 },
+];
+
 export default function Sidebar({ isOpen, collapsed, onClose, onToggleCollapse }: SidebarProps) {
   const location = useLocation();
   const isEmpActive = location.pathname.startsWith('/employee-management');
+  const isLeaveActive = location.pathname.startsWith('/leave-management');
   const [empOpen, setEmpOpen] = useState(isEmpActive);
+  const [leaveOpen, setLeaveOpen] = useState(isLeaveActive);
 
   const linkStyle = (isActive: boolean) => ({
     display: 'flex',
@@ -177,20 +189,76 @@ export default function Sidebar({ isOpen, collapsed, onClose, onToggleCollapse }
             {!collapsed && <span className="flex-1 truncate">Attendance</span>}
           </NavLink>
 
-          {/* Leave */}
-          <NavLink
-            to="/leave"
-            onClick={onClose}
-            style={({ isActive }) => ({
-              ...linkStyle(isActive),
-              justifyContent: collapsed ? 'center' : undefined,
-              padding: collapsed ? '10px' : '10px 14px',
-            })}
-            title={collapsed ? 'Leave' : undefined}
-          >
-            <CalendarDays size={18} />
-            {!collapsed && <span className="flex-1 truncate">Leave</span>}
-          </NavLink>
+          {/* Leave Management - Collapsible */}
+          {!collapsed ? (
+            <>
+              <button
+                onClick={() => setLeaveOpen(o => !o)}
+                style={{
+                  ...linkStyle(isLeaveActive && !leaveOpen),
+                  width: '100%',
+                  border: 'none',
+                  cursor: 'pointer',
+                  justifyContent: 'space-between',
+                  backgroundColor: isLeaveActive ? '#eef2ff' : 'transparent',
+                  color: isLeaveActive ? '#4338ca' : '#6b7280',
+                }}
+              >
+                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                  <CalendarDays size={18} />
+                  <span>Leave Management</span>
+                </span>
+                <ChevronDown
+                  size={16}
+                  style={{
+                    transition: 'transform 0.2s',
+                    transform: leaveOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}
+                />
+              </button>
+              {leaveOpen && (
+                <div style={{ paddingLeft: 16, marginTop: 2 }}>
+                  {leaveSubItems.map(sub => (
+                    <NavLink
+                      key={sub.to}
+                      to={sub.to}
+                      end={sub.end}
+                      onClick={onClose}
+                      style={({ isActive }) => ({
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 10,
+                        padding: '8px 12px',
+                        marginBottom: 1,
+                        borderRadius: 8,
+                        fontSize: 13,
+                        fontWeight: 400,
+                        textDecoration: 'none',
+                        transition: 'all 0.15s ease',
+                        backgroundColor: isActive ? '#e0e7ff' : 'transparent',
+                        color: isActive ? '#4338ca' : '#6b7280',
+                      })}
+                    >
+                      <sub.icon size={15} />
+                      <span>{sub.label}</span>
+                    </NavLink>
+                  ))}
+                </div>
+              )}
+            </>
+          ) : (
+            <NavLink
+              to="/leave-management"
+              style={({ isActive }) => ({
+                ...linkStyle(isActive),
+                justifyContent: 'center',
+                padding: '10px',
+              })}
+              title="Leave Management"
+            >
+              <CalendarDays size={18} />
+            </NavLink>
+          )}
         </nav>
 
         {/* Collapse toggle */}
