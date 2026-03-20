@@ -98,4 +98,32 @@
   .tab-btn.active {
     @apply text-indigo-600 border-indigo-600;
   }
+
+  /* Hide scrollbar for horizontal nav tabs */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Modern nav tab base styles */
+  .modern-nav-tab {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    white-space: nowrap;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    text-decoration: none;
+  }
+
+  .modern-nav-tab:hover {
+    background-color: rgba(243, 244, 246, 0.8) !important;
+  }
 }
