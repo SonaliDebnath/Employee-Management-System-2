@@ -1,5 +1,5 @@
 import { useState, type ReactNode } from 'react';
-import { ArrowUpDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
 
 interface Column<T> {
   key: string;
@@ -43,32 +43,32 @@ export default function DataTable<T extends Record<string, unknown>>({
 
   return (
     <div className="overflow-x-auto">
-      <table className="w-full text-sm">
+      <table className="w-full text-[13px] border-collapse">
         <thead>
-          <tr className="border-b border-gray-200 bg-gray-50">
+          <tr className="border-b border-gray-200 bg-gray-50/80">
             {columns.map(col => (
               <th
                 key={col.key}
-                className={`px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider ${col.sortable ? 'cursor-pointer hover:text-gray-700 select-none' : ''}`}
+                className={`px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200 last:border-r-0 ${col.sortable ? 'cursor-pointer hover:text-gray-800' : ''}`}
                 onClick={() => col.sortable && handleSort(col.key)}
               >
-                <div className="flex items-center gap-1">
+                <span className="flex items-center gap-1">
                   {col.label}
-                  {col.sortable && <ArrowUpDown size={14} className="text-gray-400" />}
-                </div>
+                  {col.sortable && <ChevronDown size={11} className="text-gray-400" />}
+                </span>
               </th>
             ))}
           </tr>
         </thead>
-        <tbody className="divide-y divide-gray-100">
+        <tbody>
           {paged.map((row, i) => (
             <tr
               key={i}
-              className={`hover:bg-gray-50 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
+              className={`border-b border-gray-200 hover:bg-gray-50/60 transition-colors ${onRowClick ? 'cursor-pointer' : ''}`}
               onClick={() => onRowClick?.(row)}
             >
               {columns.map(col => (
-                <td key={col.key} className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                <td key={col.key} className="px-3 py-3 text-gray-700 whitespace-nowrap border-r border-gray-100 last:border-r-0">
                   {col.render ? col.render(row) : String(row[col.key] ?? '')}
                 </td>
               ))}
@@ -77,34 +77,34 @@ export default function DataTable<T extends Record<string, unknown>>({
         </tbody>
       </table>
       {totalPages > 1 && (
-        <div className="flex items-center justify-between px-4 py-3 border-t border-gray-200">
-          <span className="text-sm text-gray-500">
-            Showing {(page - 1) * pageSize + 1}-{Math.min(page * pageSize, data.length)} of {data.length}
+        <div className="flex items-center justify-between px-3 py-3 border-t border-gray-200">
+          <span className="text-[12px] text-gray-500">
+            Showing {(page - 1) * pageSize + 1} to {Math.min(page * pageSize, data.length)} of {data.length} results
           </span>
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => setPage(p => Math.max(1, p - 1))}
-              disabled={page === 1}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronLeft size={18} />
-            </button>
-            {Array.from({ length: totalPages }, (_, i) => (
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[12px] text-gray-500">Rows per page:</span>
+              <select className="px-1.5 py-0.5 border border-gray-200 rounded text-[12px] bg-white text-gray-600">
+                <option>{pageSize}</option>
+              </select>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-[12px] text-gray-500">Page {page} of {totalPages}</span>
               <button
-                key={i}
-                onClick={() => setPage(i + 1)}
-                className={`w-8 h-8 rounded text-sm ${page === i + 1 ? 'bg-indigo-600 text-white' : 'hover:bg-gray-100'}`}
+                onClick={() => setPage(p => Math.max(1, p - 1))}
+                disabled={page === 1}
+                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-400"
               >
-                {i + 1}
+                <ChevronLeft size={16} />
               </button>
-            ))}
-            <button
-              onClick={() => setPage(p => Math.min(totalPages, p + 1))}
-              disabled={page === totalPages}
-              className="p-1 rounded hover:bg-gray-100 disabled:opacity-50"
-            >
-              <ChevronRight size={18} />
-            </button>
+              <button
+                onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                disabled={page === totalPages}
+                className="p-1 rounded hover:bg-gray-100 disabled:opacity-30 text-gray-400"
+              >
+                <ChevronRight size={16} />
+              </button>
+            </div>
           </div>
         </div>
       )}

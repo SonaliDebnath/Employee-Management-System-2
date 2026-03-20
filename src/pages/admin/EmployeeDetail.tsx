@@ -1,8 +1,12 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Edit3, ChevronUp, ChevronDown, FileText, Download, Upload, Eye, Trash2, X, AlertTriangle, Check, Camera } from 'lucide-react';
+import { Edit3, FileText, Download, Upload, Eye, Trash2, X, AlertTriangle, Check, Camera, ChevronDown, Search } from 'lucide-react';
 import { employees, departments, designations, subDepartments } from '../../data/mockData';
 import type { Employee } from '../../types';
+import ListDetailLayout from '../../components/common/ListDetailLayout';
+import DetailSection from '../../components/common/DetailSection';
+import InfoGrid from '../../components/common/InfoGrid';
+import StatusBadge from '../../components/common/StatusBadge';
 
 const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
 const avatarColors: Record<string, string> = {
@@ -34,43 +38,6 @@ function calcExp(joinDate: string) {
   return `${years} year(s) ${months} month(s)`;
 }
 
-interface SectionProps {
-  title: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  onEdit?: () => void;
-}
-
-function CollapsibleSection({ title, children, defaultOpen = true, onEdit }: SectionProps) {
-  const [open, setOpen] = useState(defaultOpen);
-  return (
-    <div className="bg-white rounded-lg border border-gray-200 mb-4">
-      <div className="flex items-center justify-between p-5 cursor-pointer" onClick={() => setOpen(o => !o)}>
-        <h2 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">{title}</h2>
-        <div className="flex items-center gap-2">
-          {onEdit && (
-            <button className="p-1 text-gray-400 hover:text-indigo-600" onClick={e => { e.stopPropagation(); onEdit(); }}>
-              <Edit3 size={14} />
-            </button>
-          )}
-          {open ? <ChevronUp size={16} className="text-gray-400" /> : <ChevronDown size={16} className="text-gray-400" />}
-        </div>
-      </div>
-      {open && <div className="px-5 pb-5">{children}</div>}
-    </div>
-  );
-}
-
-function InfoRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div>
-      <p className="text-xs text-gray-500 mb-0.5">{label}</p>
-      <p className="text-sm text-gray-900">{value || '-'}</p>
-    </div>
-  );
-}
-
-// Reusable input/field components for edit modal
 const inputCls = "w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white";
 function Field({ label, required, children }: { label: string; required?: boolean; children: React.ReactNode }) {
   return (
@@ -84,37 +51,178 @@ function Field({ label, required, children }: { label: string; required?: boolea
 export default function EmployeeDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedId, setSelectedId] = useState(id);
 
-  const originalEmp = employees.find(e => e.id === id);
-  if (!originalEmp) return <div className="p-8 text-center text-gray-500">Employee not found</div>;
+  const filteredEmployees = useMemo(() => {
+    if (!searchQuery) return employees;
+    const q = searchQuery.toLowerCase();
+    return employees.filter(e =>
+      e.name.toLowerCase().includes(q) ||
+      e.id.toLowerCase().includes(q) ||
+      e.department.toLowerCase().includes(q) ||
+      e.designation.toLowerCase().includes(q)
+    );
+  }, [searchQuery]);
 
-  // Local editable copy of employee
+  const selectedEmp = employees.find(e => e.id === selectedId);
+
+  const handleSelectEmployee = (empId: string) => {
+    setSelectedId(empId);
+    navigate(`/employee-management/employees/${empId}`, { replace: true });
+  };
+
+  return (
+    <ListDetailLayout
+      listPanel={
+        <EmployeeListPanel
+          employees={filteredEmployees}
+          selectedId={selectedId}
+          onSelect={handleSelectEmployee}
+          searchQuery={searchQuery}
+          onSearch={setSearchQuery}
+        />
+      }
+      detailPanel={
+        selectedEmp ? (
+          <EmployeeDetailContent
+            key={selectedEmp.id}
+            employee={selectedEmp}
+            onNavigateBack={() => navigate('/employee-management')}
+          />
+        ) : (
+          <div className="flex-1 flex items-center justify-center p-8">
+            <div className="text-center">
+              <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mx-auto mb-4">
+                <Search size={24} className="text-gray-400" />
+              </div>
+              <p className="text-gray-500 text-sm">Select an employee from the list</p>
+            </div>
+          </div>
+        )
+      }
+    />
+  );
+}
+
+/* ===================== LEFT: Employee List Panel ===================== */
+function EmployeeListPanel({
+  employees: empList,
+  selectedId,
+  onSelect,
+  searchQuery,
+  onSearch,
+}: {
+  employees: Employee[];
+  selectedId?: string;
+  onSelect: (id: string) => void;
+  searchQuery: string;
+  onSearch: (q: string) => void;
+}) {
+  return (
+    <>
+      {/* Header */}
+      <div className="px-4 py-3 border-b border-gray-200 bg-gradient-to-b from-gray-50 to-white">
+        <div className="flex items-center justify-between">
+          <h2 className="text-[14px] font-bold text-gray-800">Employees</h2>
+          <span className="text-[11px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full">{empList.length}</span>
+        </div>
+      </div>
+
+      {/* Search */}
+      <div className="px-3 py-2.5 border-b border-gray-100">
+        <div className="relative">
+          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={e => onSearch(e.target.value)}
+            placeholder="Search employees..."
+            className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg bg-gray-50 text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 focus:bg-white transition-all"
+          />
+        </div>
+      </div>
+
+      {/* Scrollable List */}
+      <div className="flex-1 overflow-y-auto">
+        {empList.length === 0 ? (
+          <div className="p-8 text-center text-[13px] text-gray-400">No employees found</div>
+        ) : (
+          empList.map(emp => {
+            const isSelected = emp.id === selectedId;
+            const initials = getInitials(emp.name);
+            const color = avatarColors[initials] || 'bg-gray-500';
+            return (
+              <div
+                key={emp.id}
+                onClick={() => onSelect(emp.id)}
+                className={`px-4 py-3 cursor-pointer border-b border-gray-100 transition-all ${
+                  isSelected
+                    ? 'bg-indigo-50 border-l-[3px] border-l-indigo-500'
+                    : 'hover:bg-gray-50 border-l-[3px] border-l-transparent'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className={`w-9 h-9 rounded-full ${color} flex items-center justify-center text-white text-[11px] font-bold flex-shrink-0`}>
+                    {initials}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between">
+                      <p className={`text-[13px] font-semibold truncate ${isSelected ? 'text-indigo-700' : 'text-gray-800'}`}>
+                        {emp.name}
+                      </p>
+                      <StatusBadge status={emp.status} size="sm" />
+                    </div>
+                    <p className="text-[12px] text-gray-500 truncate mt-0.5">{emp.designation}</p>
+                    <p className="text-[11px] text-gray-400">{emp.department} · {emp.id}</p>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      {/* Footer */}
+      <div className="px-4 py-2 border-t border-gray-200 text-[11px] text-gray-400 bg-gray-50/80">
+        Showing {empList.length} employee{empList.length !== 1 ? 's' : ''}
+      </div>
+    </>
+  );
+}
+
+/* ===================== RIGHT: Employee Detail Content ===================== */
+function EmployeeDetailContent({
+  employee: originalEmp,
+  onNavigateBack,
+}: {
+  employee: Employee;
+  onNavigateBack: () => void;
+}) {
   const [emp, setEmp] = useState<Employee>({ ...originalEmp });
   const [isDeleted, setIsDeleted] = useState(false);
-
-  // Modal states
   const [showEditModal, setShowEditModal] = useState(false);
   const [editSection, setEditSection] = useState('');
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showStatusDropdown, setShowStatusDropdown] = useState(false);
   const [showStatusConfirm, setShowStatusConfirm] = useState<Employee['status'] | null>(null);
   const [deleteConfirmText, setDeleteConfirmText] = useState('');
-
-  // Edit form state — mirrors employee fields
   const [editForm, setEditForm] = useState<Record<string, string>>({});
   const fileRef = useRef<HTMLInputElement>(null);
 
   if (isDeleted) {
     return (
-      <div className="p-12 text-center">
-        <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-          <Trash2 size={28} className="text-red-500" />
+      <div className="flex-1 flex items-center justify-center p-12">
+        <div className="text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <Trash2 size={28} className="text-red-500" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-900 mb-2">Employee Deleted</h2>
+          <p className="text-sm text-gray-500 mb-6">This employee record has been removed.</p>
+          <button onClick={onNavigateBack} className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
+            Back to Employee List
+          </button>
         </div>
-        <h2 className="text-lg font-semibold text-gray-900 mb-2">Employee Deleted</h2>
-        <p className="text-sm text-gray-500 mb-6">This employee record has been removed successfully.</p>
-        <button onClick={() => navigate('/employee-management')} className="px-5 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">
-          Back to Employee List
-        </button>
       </div>
     );
   }
@@ -124,10 +232,8 @@ export default function EmployeeDetail() {
   const initials = getInitials(emp.name);
   const color = avatarColors[initials] || 'bg-gray-500';
 
-  // Open edit modal for a specific section
   const openEdit = (section: string) => {
     setEditSection(section);
-    // Pre-populate form based on section
     const fields: Record<string, Record<string, string>> = {
       'Basic Information': { firstName, lastName, nickname: emp.nickname, email: emp.email },
       'Work Information': { department: emp.department, subDepartment: emp.subDepartment, designation: emp.designation, type: emp.type, workLocation: emp.workLocation, status: emp.status, sourceOfHire: emp.sourceOfHire, joinDate: emp.joinDate, totalExperience: emp.totalExperience },
@@ -143,7 +249,6 @@ export default function EmployeeDetail() {
 
   const updateEditField = (key: string, value: string) => setEditForm(f => ({ ...f, [key]: value }));
 
-  // Save edits back to employee state
   const saveEdit = () => {
     setEmp(prev => {
       const updated = { ...prev, modifiedBy: 'Admin', modifiedTime: new Date().toLocaleString() };
@@ -183,7 +288,6 @@ export default function EmployeeDetail() {
     setShowEditModal(false);
   };
 
-  // Change status with confirmation
   const confirmStatusChange = (newStatus: Employee['status']) => {
     setShowStatusConfirm(newStatus);
     setShowStatusDropdown(false);
@@ -200,14 +304,12 @@ export default function EmployeeDetail() {
     setShowStatusConfirm(null);
   };
 
-  // Delete
   const handleDelete = () => {
     if (deleteConfirmText !== emp.name) return;
     setIsDeleted(true);
     setShowDeleteConfirm(false);
   };
 
-  // Dynamic designation options
   const deptDesignations = editForm.department
     ? designations.filter(d => d.department === editForm.department)
     : designations;
@@ -215,7 +317,6 @@ export default function EmployeeDetail() {
     ? subDepartments.filter(sd => sd.departmentName === editForm.department)
     : [];
 
-  // Render edit modal fields based on section
   const renderEditFields = () => {
     switch (editSection) {
       case 'Basic Information':
@@ -271,7 +372,7 @@ export default function EmployeeDetail() {
             <Field label="Reporting Manager">
               <select className={inputCls} value={editForm.reportingManager || ''} onChange={e => updateEditField('reportingManager', e.target.value)}>
                 <option value="">Select</option>
-                {employees.filter(e => e.id !== id).map(e => <option key={e.id} value={e.name}>{e.name} — {e.designation}</option>)}
+                {employees.filter(e => e.id !== emp.id).map(e => <option key={e.id} value={e.name}>{e.name} — {e.designation}</option>)}
                 <option value="VP Engineering">VP Engineering</option>
               </select>
             </Field>
@@ -362,7 +463,7 @@ export default function EmployeeDetail() {
               <Field label="Reporting Manager">
                 <select className={inputCls} value={editForm.reportingManager || ''} onChange={e => updateEditField('reportingManager', e.target.value)}>
                   <option value="">Select</option>
-                  {employees.filter(e => e.id !== id).map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
+                  {employees.filter(e => e.id !== emp.id).map(e => <option key={e.id} value={e.name}>{e.name}</option>)}
                   <option value="VP Engineering">VP Engineering</option>
                 </select>
               </Field>
@@ -379,31 +480,29 @@ export default function EmployeeDetail() {
   };
 
   return (
-    <div>
-      <button onClick={() => navigate('/employee-management')} className="flex items-center gap-1 text-sm text-indigo-600 hover:text-indigo-700 mb-4">
-        <ArrowLeft size={16} /> Back to Employee List
-      </button>
-
+    <div className="flex flex-col h-full">
       {/* Profile Header */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 mb-4">
-        <div className="flex items-start justify-between">
+      <div className="px-6 py-4 border-b border-gray-200 bg-white flex-shrink-0">
+        <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
-            <div className={`w-16 h-16 rounded-full ${color} flex items-center justify-center text-white text-xl font-semibold`}>{initials}</div>
+            <div className={`w-12 h-12 rounded-full ${color} flex items-center justify-center text-white text-[14px] font-bold shadow-sm`}>{initials}</div>
             <div>
-              <h1 className="text-xl font-bold text-gray-900">{emp.name}</h1>
-              <p className="text-sm text-gray-500">{emp.designation} · {emp.department}</p>
-              <p className="text-xs text-gray-400 mt-0.5">{emp.id} · {emp.email}</p>
+              <div className="flex items-center gap-2.5">
+                <h1 className="text-[17px] font-bold text-gray-900">{emp.name}</h1>
+                <span className="text-[12px] text-gray-400 bg-gray-100 px-2 py-0.5 rounded">{emp.id}</span>
+              </div>
+              <p className="text-[13px] text-gray-500 mt-0.5">{emp.designation} · {emp.department}</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2">
             {/* Status dropdown */}
             <div className="relative">
               <button
                 onClick={() => setShowStatusDropdown(o => !o)}
-                className={`px-3 py-1 rounded-full text-xs font-medium cursor-pointer flex items-center gap-1.5 ${statusColors[emp.status] || 'bg-gray-100 text-gray-700'}`}
+                className={`px-3 py-1.5 rounded-full text-[12px] font-medium cursor-pointer flex items-center gap-1.5 ${statusColors[emp.status] || 'bg-gray-100 text-gray-700'}`}
               >
                 {emp.status}
-                <ChevronDown size={12} />
+                <ChevronDown size={11} />
               </button>
               {showStatusDropdown && (
                 <>
@@ -415,7 +514,7 @@ export default function EmployeeDetail() {
                         key={s}
                         onClick={() => confirmStatusChange(s)}
                         disabled={s === emp.status}
-                        className={`w-full text-left px-3 py-2 text-sm flex items-center justify-between hover:bg-gray-50 transition-colors ${s === emp.status ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700'}`}
+                        className={`w-full text-left px-3 py-2 text-[13px] flex items-center justify-between hover:bg-gray-50 transition-colors ${s === emp.status ? 'text-gray-300 cursor-not-allowed' : 'text-gray-700'}`}
                       >
                         <span className="flex items-center gap-2">
                           <span className={`w-2 h-2 rounded-full ${s === 'Active' ? 'bg-green-500' : s === 'Probation' ? 'bg-amber-500' : s === 'Notice Period' ? 'bg-red-500' : 'bg-gray-400'}`} />
@@ -428,251 +527,206 @@ export default function EmployeeDetail() {
                 </>
               )}
             </div>
-
-            <button onClick={() => openEdit('Profile')} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 flex items-center gap-1.5">
-              <Edit3 size={14} /> Edit Profile
+            <button onClick={() => openEdit('Profile')} className="px-3.5 py-1.5 border border-gray-200 rounded-lg text-[12px] font-medium text-gray-600 hover:bg-gray-50 flex items-center gap-1.5 transition-colors">
+              <Edit3 size={13} /> Edit
             </button>
-            <button onClick={() => setShowDeleteConfirm(true)} className="px-3 py-2 border border-red-200 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 flex items-center gap-1.5">
-              <Trash2 size={14} /> Delete
+            <button onClick={() => setShowDeleteConfirm(true)} className="px-3 py-1.5 border border-red-200 rounded-lg text-[12px] font-medium text-red-500 hover:bg-red-50 flex items-center gap-1.5 transition-colors">
+              <Trash2 size={13} /> Delete
             </button>
           </div>
         </div>
       </div>
 
-      {/* Basic Information */}
-      <CollapsibleSection title="Basic Information" onEdit={() => openEdit('Basic Information')}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Employee ID" value={emp.id} />
-          <InfoRow label="Nick name" value={emp.nickname} />
-          <InfoRow label="First Name" value={firstName} />
-          <InfoRow label="Email address" value={emp.email} />
-          <InfoRow label="Last Name" value={lastName} />
-        </div>
-      </CollapsibleSection>
+      {/* Detail Sections */}
+      <div className="flex-1 overflow-y-auto p-5">
+        <DetailSection title="Basic Information" onEdit={() => openEdit('Basic Information')}>
+          <InfoGrid items={[
+            { label: 'Employee ID', value: emp.id },
+            { label: 'First Name', value: firstName },
+            { label: 'Last Name', value: lastName },
+            { label: 'Nick name', value: emp.nickname },
+            { label: 'Email address', value: emp.email },
+            { label: 'Phone', value: emp.phone },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Work Information */}
-      <CollapsibleSection title="Work Information" onEdit={() => openEdit('Work Information')}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Department" value={emp.department} />
-          <InfoRow label="Location" value={emp.workLocation} />
-          <InfoRow label="Employment Type" value={emp.type} />
-          <InfoRow label="Designation" value={emp.designation} />
-          <InfoRow label="Employee Status" value={emp.status} />
-          <div />
-          <InfoRow label="Source of Hire" value={emp.sourceOfHire} />
-          <div />
-          <InfoRow label="Date of Joining" value={emp.joinDate} />
-          <div />
-          <InfoRow label="Current Experience" value={calcExp(emp.joinDate)} />
-          <div />
-          <InfoRow label="Total Experience" value={emp.totalExperience} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="Work Information" onEdit={() => openEdit('Work Information')}>
+          <InfoGrid items={[
+            { label: 'Department', value: emp.department },
+            { label: 'Designation', value: emp.designation },
+            { label: 'Employment Type', value: emp.type },
+            { label: 'Location', value: emp.workLocation },
+            { label: 'Employee Status', value: emp.status },
+            { label: 'Source of Hire', value: emp.sourceOfHire },
+            { label: 'Date of Joining', value: emp.joinDate },
+            { label: 'Current Experience', value: calcExp(emp.joinDate) },
+            { label: 'Total Experience', value: emp.totalExperience },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Hierarchy Information */}
-      <CollapsibleSection title="Hierarchy Information" onEdit={() => openEdit('Hierarchy Information')}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Reporting Manager" value={emp.reportingManager} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="Hierarchy Information" onEdit={() => openEdit('Hierarchy Information')}>
+          <InfoGrid items={[
+            { label: 'Reporting Manager', value: emp.reportingManager },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Personal Details */}
-      <CollapsibleSection title="Personal Details" onEdit={() => openEdit('Personal Details')}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Date of Birth" value={emp.dateOfBirth} />
-          <InfoRow label="Age" value={calcAge(emp.dateOfBirth)} />
-          <InfoRow label="Gender" value={emp.gender} />
-          <InfoRow label="Marital Status" value={emp.maritalStatus} />
-          <InfoRow label="About Me" value={emp.aboutMe} />
-          <InfoRow label="Ask me about/Expertise" value={emp.expertise} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="Personal Details" onEdit={() => openEdit('Personal Details')}>
+          <InfoGrid items={[
+            { label: 'Date of Birth', value: emp.dateOfBirth },
+            { label: 'Age', value: calcAge(emp.dateOfBirth) },
+            { label: 'Gender', value: emp.gender },
+            { label: 'Marital Status', value: emp.maritalStatus },
+            { label: 'About Me', value: emp.aboutMe },
+            { label: 'Expertise', value: emp.expertise },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Identity Information */}
-      <CollapsibleSection title="Identity Information" onEdit={() => openEdit('Identity Information')}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="UAN" value={emp.uan} />
-          <InfoRow label="PAN" value={emp.bankDetails.pan} />
-          <InfoRow label="Aadhaar" value={emp.aadhaar} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="Identity Information" onEdit={() => openEdit('Identity Information')}>
+          <InfoGrid items={[
+            { label: 'UAN', value: emp.uan },
+            { label: 'PAN', value: emp.bankDetails.pan },
+            { label: 'Aadhaar', value: emp.aadhaar },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Contact Details */}
-      <CollapsibleSection title="Contact Details" onEdit={() => openEdit('Contact Details')}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Work Phone Number" value={emp.phone} />
-          <InfoRow label="Extension" value={emp.extension} />
-          <InfoRow label="Seating Location" value={emp.seatingLocation} />
-          <InfoRow label="Tags" value="-" />
-          <InfoRow label="Present Address" value={emp.address} />
-          <InfoRow label="Permanent Address" value={emp.permanentAddress} />
-          <InfoRow label="Personal Mobile Number" value={emp.personalMobile} />
-          <InfoRow label="Personal Email Address" value={emp.personalEmail} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="Contact Details" onEdit={() => openEdit('Contact Details')}>
+          <InfoGrid items={[
+            { label: 'Work Phone', value: emp.phone },
+            { label: 'Extension', value: emp.extension },
+            { label: 'Seating Location', value: emp.seatingLocation },
+            { label: 'Present Address', value: emp.address },
+            { label: 'Permanent Address', value: emp.permanentAddress },
+            { label: 'Personal Mobile', value: emp.personalMobile },
+            { label: 'Personal Email', value: emp.personalEmail },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Documents */}
-      <CollapsibleSection title="Documents">
-        <div className="space-y-4">
-          <div className="flex items-center justify-between mb-2">
-            <p className="text-xs text-gray-500">Important employee documents</p>
-            <button className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-xs font-medium rounded-lg hover:bg-indigo-700 transition-colors">
-              <Upload size={13} /> Upload Document
-            </button>
-          </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {[
-              { name: 'Aadhaar Card', type: 'ID Proof', date: '15 Jan 2024', uploaded: true },
-              { name: 'PAN Card', type: 'Tax Document', date: '15 Jan 2024', uploaded: true },
-              { name: 'Offer Letter', type: 'Employment', date: '10 Dec 2023', uploaded: true },
-              { name: 'Resume / CV', type: 'Employment', date: '08 Dec 2023', uploaded: true },
-              { name: 'Educational Certificates', type: 'Education', date: '15 Jan 2024', uploaded: true },
-              { name: 'Address Proof', type: 'ID Proof', date: '15 Jan 2024', uploaded: true },
-              { name: 'Bank Passbook / Cheque', type: 'Banking', date: '20 Jan 2024', uploaded: true },
-              { name: 'Relieving Letter', type: 'Employment', date: '', uploaded: false },
-              { name: 'Experience Letter', type: 'Employment', date: '', uploaded: false },
-            ].map((doc, i) => (
-              <div key={i} className={`flex items-start gap-3 p-3.5 rounded-lg border ${doc.uploaded ? 'border-gray-200 bg-white' : 'border-dashed border-gray-300 bg-gray-50'}`}>
-                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${doc.uploaded ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
-                  <FileText size={18} />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{doc.name}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{doc.type}</p>
-                  {doc.uploaded ? (
-                    <p className="text-xs text-gray-400 mt-1">Uploaded: {doc.date}</p>
-                  ) : (
-                    <p className="text-xs text-amber-500 mt-1">Not uploaded</p>
+        <DetailSection title="Documents">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <p className="text-[12px] text-gray-500">Important employee documents</p>
+              <button className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-600 text-white text-[12px] font-medium rounded-lg hover:bg-indigo-700 transition-colors">
+                <Upload size={13} /> Upload Document
+              </button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+              {[
+                { name: 'Aadhaar Card', type: 'ID Proof', date: '15 Jan 2024', uploaded: true },
+                { name: 'PAN Card', type: 'Tax Document', date: '15 Jan 2024', uploaded: true },
+                { name: 'Offer Letter', type: 'Employment', date: '10 Dec 2023', uploaded: true },
+                { name: 'Resume / CV', type: 'Employment', date: '08 Dec 2023', uploaded: true },
+                { name: 'Educational Certificates', type: 'Education', date: '15 Jan 2024', uploaded: true },
+                { name: 'Relieving Letter', type: 'Employment', date: '', uploaded: false },
+              ].map((doc, i) => (
+                <div key={i} className={`flex items-center gap-3 p-3 rounded-lg border transition-colors ${doc.uploaded ? 'border-gray-200 hover:border-indigo-200 hover:bg-indigo-50/30' : 'border-dashed border-gray-300 bg-gray-50'}`}>
+                  <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${doc.uploaded ? 'bg-indigo-50 text-indigo-600' : 'bg-gray-100 text-gray-400'}`}>
+                    <FileText size={18} />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-[13px] font-medium text-gray-800 truncate">{doc.name}</p>
+                    <p className="text-[11px] text-gray-400 mt-0.5">{doc.type} {doc.uploaded ? `· ${doc.date}` : ''}</p>
+                    {!doc.uploaded && <p className="text-[11px] text-amber-500 mt-0.5">Not uploaded</p>}
+                  </div>
+                  {doc.uploaded && (
+                    <div className="flex items-center gap-1 flex-shrink-0">
+                      <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"><Eye size={14} /></button>
+                      <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-md transition-colors"><Download size={14} /></button>
+                    </div>
                   )}
                 </div>
-                {doc.uploaded ? (
-                  <div className="flex items-center gap-1 flex-shrink-0">
-                    <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="View">
-                      <Eye size={14} />
-                    </button>
-                    <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors" title="Download">
-                      <Download size={14} />
-                    </button>
-                  </div>
-                ) : (
-                  <button className="p-1.5 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded transition-colors flex-shrink-0" title="Upload">
-                    <Upload size={14} />
-                  </button>
-                )}
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </CollapsibleSection>
+        </DetailSection>
 
-      {/* Separation Information */}
-      <CollapsibleSection title="Separation Information" defaultOpen={false}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Date of Exit" value={emp.dateOfExit} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="Separation Information" defaultOpen={false}>
+          <InfoGrid items={[
+            { label: 'Date of Exit', value: emp.dateOfExit },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* System Fields */}
-      <CollapsibleSection title="System Fields" defaultOpen={false}>
-        <div className="grid grid-cols-2 gap-y-4 gap-x-12">
-          <InfoRow label="Added By" value={emp.addedBy} />
-          <InfoRow label="Added Time" value={emp.addedTime} />
-          <InfoRow label="Modified By" value={emp.modifiedBy} />
-          <InfoRow label="Modified Time" value={emp.modifiedTime} />
-        </div>
-      </CollapsibleSection>
+        <DetailSection title="System Fields" defaultOpen={false}>
+          <InfoGrid items={[
+            { label: 'Added By', value: emp.addedBy },
+            { label: 'Added Time', value: emp.addedTime },
+            { label: 'Modified By', value: emp.modifiedBy },
+            { label: 'Modified Time', value: emp.modifiedTime },
+          ]} columns={3} />
+        </DetailSection>
 
-      {/* Work Experience */}
-      <CollapsibleSection title="Work Experience" defaultOpen={false}>
-        {emp.workExperience.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Company Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Job Title</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">From Date</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">To Date</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Job Description</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Relevant</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {emp.workExperience.map((w, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-700">{w.company}</td>
-                    <td className="px-4 py-2 text-gray-700">{w.jobTitle}</td>
-                    <td className="px-4 py-2 text-gray-700">{w.fromDate}</td>
-                    <td className="px-4 py-2 text-gray-700">{w.toDate}</td>
-                    <td className="px-4 py-2 text-gray-700">{w.description || '-'}</td>
-                    <td className="px-4 py-2 text-gray-700">{w.relevant ? 'Yes' : 'No'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400">No rows found.</p>
-        )}
-      </CollapsibleSection>
+        <DetailSection title="Work Experience" defaultOpen={false}>
+          {emp.workExperience.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13px] border-collapse">
+                <thead><tr className="border-b border-gray-200 bg-gray-50/80">
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Company</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Title</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">From</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide">To</th>
+                </tr></thead>
+                <tbody>
+                  {emp.workExperience.map((w, i) => (
+                    <tr key={i} className="border-b border-gray-200 hover:bg-gray-50/60">
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{w.company}</td>
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{w.jobTitle}</td>
+                      <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{w.fromDate}</td>
+                      <td className="px-3 py-3 text-gray-600">{w.toDate}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-[13px] text-gray-400">No records found.</p>}
+        </DetailSection>
 
-      {/* Education Details */}
-      <CollapsibleSection title="Education Details" defaultOpen={false}>
-        {emp.education.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Institute Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Degree/Diploma</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Specialization</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Date of Completion</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {emp.education.map((ed, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-700">{ed.institute}</td>
-                    <td className="px-4 py-2 text-gray-700">{ed.degree}</td>
-                    <td className="px-4 py-2 text-gray-700">{ed.specialization}</td>
-                    <td className="px-4 py-2 text-gray-700">{ed.dateOfCompletion || '-'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400">No rows found.</p>
-        )}
-      </CollapsibleSection>
+        <DetailSection title="Education Details" defaultOpen={false}>
+          {emp.education.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13px] border-collapse">
+                <thead><tr className="border-b border-gray-200 bg-gray-50/80">
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Institute</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Degree</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Specialization</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide">Completed</th>
+                </tr></thead>
+                <tbody>
+                  {emp.education.map((ed, i) => (
+                    <tr key={i} className="border-b border-gray-200 hover:bg-gray-50/60">
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{ed.institute}</td>
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{ed.degree}</td>
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{ed.specialization}</td>
+                      <td className="px-3 py-3 text-gray-600">{ed.dateOfCompletion || '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-[13px] text-gray-400">No records found.</p>}
+        </DetailSection>
 
-      {/* Dependent Details */}
-      <CollapsibleSection title="Dependent Details" defaultOpen={false}>
-        {emp.dependents.length > 0 ? (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Name</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Relationship</th>
-                  <th className="px-4 py-2 text-left text-xs font-medium text-gray-500">Date of Birth</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {emp.dependents.map((dep, i) => (
-                  <tr key={i} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 text-gray-700">{dep.name}</td>
-                    <td className="px-4 py-2 text-gray-700">{dep.relationship}</td>
-                    <td className="px-4 py-2 text-gray-700">{dep.dateOfBirth}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p className="text-sm text-gray-400">No rows found.</p>
-        )}
-      </CollapsibleSection>
+        <DetailSection title="Dependent Details" defaultOpen={false}>
+          {emp.dependents.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full text-[13px] border-collapse">
+                <thead><tr className="border-b border-gray-200 bg-gray-50/80">
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Name</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Relationship</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide">Date of Birth</th>
+                </tr></thead>
+                <tbody>
+                  {emp.dependents.map((dep, i) => (
+                    <tr key={i} className="border-b border-gray-200 hover:bg-gray-50/60">
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{dep.name}</td>
+                      <td className="px-3 py-3 text-gray-700 border-r border-gray-100">{dep.relationship}</td>
+                      <td className="px-3 py-3 text-gray-600">{dep.dateOfBirth}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : <p className="text-[13px] text-gray-400">No records found.</p>}
+        </DetailSection>
+      </div>
 
       {/* ===== EDIT MODAL ===== */}
       {showEditModal && (
@@ -688,9 +742,7 @@ export default function EmployeeDetail() {
                 <button onClick={() => setShowEditModal(false)} className="p-1.5 rounded-lg hover:bg-white/20 text-white/80 hover:text-white"><X size={18} /></button>
               </div>
             </div>
-            <div className="flex-1 overflow-y-auto p-6">
-              {renderEditFields()}
-            </div>
+            <div className="flex-1 overflow-y-auto p-6">{renderEditFields()}</div>
             <div className="flex items-center justify-end gap-3 px-6 py-3 border-t border-gray-200 bg-gray-50 shrink-0">
               <button onClick={() => setShowEditModal(false)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100">Cancel</button>
               <button onClick={saveEdit} className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium">Save Changes</button>
@@ -716,19 +768,14 @@ export default function EmployeeDetail() {
                 <div>
                   <h3 className="text-base font-semibold text-gray-900">Change Employee Status</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    Are you sure you want to change <span className="font-medium text-gray-700">{emp.name}</span>'s status from{' '}
+                    Change <span className="font-medium text-gray-700">{emp.name}</span>'s status from{' '}
                     <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium ${statusColors[emp.status]}`}>{emp.status}</span>
                     {' '}to{' '}
                     <span className={`inline-flex px-1.5 py-0.5 rounded text-xs font-medium ${statusColors[showStatusConfirm]}`}>{showStatusConfirm}</span>?
                   </p>
                   {showStatusConfirm === 'Inactive' && (
                     <div className="mt-3 p-3 bg-red-50 rounded-lg border border-red-100">
-                      <p className="text-xs text-red-700">Setting status to <strong>Inactive</strong> will mark today as the date of exit. This action represents employee separation.</p>
-                    </div>
-                  )}
-                  {showStatusConfirm === 'Notice Period' && (
-                    <div className="mt-3 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                      <p className="text-xs text-amber-700">This will initiate the exit process for this employee.</p>
+                      <p className="text-xs text-red-700">Setting to <strong>Inactive</strong> will mark today as exit date.</p>
                     </div>
                   )}
                 </div>
@@ -739,7 +786,7 @@ export default function EmployeeDetail() {
               <button onClick={applyStatusChange} className={`px-5 py-2 text-sm text-white rounded-lg font-medium ${
                 showStatusConfirm === 'Active' ? 'bg-green-600 hover:bg-green-700' : showStatusConfirm === 'Inactive' ? 'bg-gray-600 hover:bg-gray-700' : showStatusConfirm === 'Notice Period' ? 'bg-red-600 hover:bg-red-700' : 'bg-amber-600 hover:bg-amber-700'
               }`}>
-                Confirm Change
+                Confirm
               </button>
             </div>
           </div>
@@ -759,18 +806,13 @@ export default function EmployeeDetail() {
                 <div className="flex-1">
                   <h3 className="text-base font-semibold text-gray-900">Delete Employee</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    This will permanently remove <span className="font-medium text-gray-700">{emp.name}</span> ({emp.id}) and all associated data. This action cannot be undone.
+                    Permanently remove <span className="font-medium text-gray-700">{emp.name}</span> ({emp.id})?
                   </p>
                   <div className="mt-4">
                     <label className="text-xs font-medium text-gray-600 block mb-1.5">
                       Type <span className="font-bold text-gray-900">"{emp.name}"</span> to confirm
                     </label>
-                    <input
-                      className={inputCls}
-                      placeholder={emp.name}
-                      value={deleteConfirmText}
-                      onChange={e => setDeleteConfirmText(e.target.value)}
-                    />
+                    <input className={inputCls} placeholder={emp.name} value={deleteConfirmText} onChange={e => setDeleteConfirmText(e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -780,7 +822,7 @@ export default function EmployeeDetail() {
               <button
                 onClick={handleDelete}
                 disabled={deleteConfirmText !== emp.name}
-                className={`px-5 py-2 text-sm text-white rounded-lg font-medium transition-colors ${deleteConfirmText === emp.name ? 'bg-red-600 hover:bg-red-700' : 'bg-red-300 cursor-not-allowed'}`}
+                className={`px-5 py-2 text-sm text-white rounded-lg font-medium ${deleteConfirmText === emp.name ? 'bg-red-600 hover:bg-red-700' : 'bg-red-300 cursor-not-allowed'}`}
               >
                 Delete Employee
               </button>

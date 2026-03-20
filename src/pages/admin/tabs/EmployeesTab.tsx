@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { ChevronDown, Filter, Maximize2, MoreHorizontal, ArrowUpDown, X, Camera, Search, User, Briefcase, Shield, Phone, Heart, GraduationCap, Building2, Users, Check, Trash2, AlertTriangle } from 'lucide-react';
+import { ChevronDown, Filter, Maximize2, MoreHorizontal, X, Camera, Search, User, Briefcase, Shield, Phone, Heart, GraduationCap, Building2, Users, Check, Trash2, AlertTriangle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { employees, departments, designations, subDepartments } from '../../../data/mockData';
 
@@ -167,17 +167,17 @@ export default function EmployeesTab() {
   return (
     <div className="relative">
       {/* Toolbar */}
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-3">
-          <button className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 bg-white hover:bg-gray-50">Employee View <ChevronDown size={14} /></button>
-          <button className="text-sm text-indigo-600 hover:text-indigo-700 font-medium">Edit</button>
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <button className="flex items-center gap-1.5 px-2.5 py-1.5 border border-gray-200 rounded-md text-[12px] text-gray-600 bg-white hover:bg-gray-50">Employee View <ChevronDown size={12} /></button>
+          <button className="text-[12px] text-indigo-600 hover:text-indigo-700 font-medium">Edit</button>
         </div>
-        <div className="flex items-center gap-3">
-          <select className="px-3 py-2 border border-gray-300 rounded-lg text-sm bg-white text-gray-700"><option>All Data</option></select>
-          <button onClick={() => setShowAddModal(true)} className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700">Add Employee(s)</button>
-          <button className="p-2 text-gray-400 hover:text-gray-600"><Maximize2 size={16} /></button>
-          <button onClick={() => setShowFilter(true)} className={`p-2 rounded-lg ${showFilter ? 'bg-indigo-100 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}><Filter size={16} /></button>
-          <button className="p-2 text-gray-400 hover:text-gray-600"><MoreHorizontal size={16} /></button>
+        <div className="flex items-center gap-2">
+          <select className="px-2.5 py-1.5 border border-gray-200 rounded-md text-[12px] bg-white text-gray-600"><option>All Data</option></select>
+          <button onClick={() => setShowAddModal(true)} className="px-3 py-1.5 bg-indigo-600 text-white rounded-lg text-[12px] font-medium hover:bg-indigo-700">Add Employee(s)</button>
+          <button className="p-1.5 text-gray-400 hover:text-gray-600"><Maximize2 size={14} /></button>
+          <button onClick={() => setShowFilter(true)} className={`p-1.5 rounded-md ${showFilter ? 'bg-indigo-50 text-indigo-600' : 'text-gray-400 hover:text-gray-600'}`}><Filter size={14} /></button>
+          <button className="p-1.5 text-gray-400 hover:text-gray-600"><MoreHorizontal size={14} /></button>
         </div>
       </div>
 
@@ -185,41 +185,41 @@ export default function EmployeesTab() {
         {/* Table */}
         <div className="flex-1 overflow-x-auto">
           <div className="bg-white rounded-lg border border-gray-200">
-            <table className="w-full text-sm">
+            <table className="w-full text-[13px] border-collapse">
               <thead>
-                <tr className="border-b border-gray-200 bg-gray-50">
-                  <th className="px-3 py-3 w-10"><input type="checkbox" className="rounded border-gray-300" /></th>
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">Photo</th>
+                <tr className="border-b border-gray-200 bg-gray-50/80">
+                  <th className="px-3 py-3 w-10 border-r border-gray-200"><input type="checkbox" className="rounded border-gray-300 w-3.5 h-3.5" /></th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide border-r border-gray-200">Photo</th>
                   {allColumns.map(h => isColVisible(h) && (
-                    <th key={h} className="px-3 py-3 text-left text-xs font-medium text-gray-500 whitespace-nowrap">
-                      <span className="flex items-center gap-1">{h} <ArrowUpDown size={12} /></span>
+                    <th key={h} className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide whitespace-nowrap cursor-pointer hover:text-gray-800 border-r border-gray-200">
+                      <span className="flex items-center gap-1">{h} <ChevronDown size={11} className="text-gray-400" /></span>
                     </th>
                   ))}
-                  <th className="px-3 py-3 text-left text-xs font-medium text-gray-500">Actions</th>
+                  <th className="px-3 py-3 text-left text-[12px] font-semibold text-gray-600 uppercase tracking-wide">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody>
                 {filtered.map(emp => {
                   const initials = getInitials(emp.name);
                   const color = avatarColors[initials] || 'bg-gray-500';
                   return (
-                    <tr key={emp.id} className="hover:bg-gray-50">
-                      <td className="px-3 py-3"><input type="checkbox" className="rounded border-gray-300" /></td>
-                      <td className="px-3 py-3"><div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center text-white text-xs font-semibold`}>{initials}</div></td>
-                      {isColVisible('Employee ID') && <td className="px-3 py-3"><button onClick={() => navigate(`/employee-management/employees/${emp.id}`)} className="text-indigo-600 hover:text-indigo-700 font-medium">{emp.id}</button></td>}
-                      {isColVisible('First Name') && <td className="px-3 py-3 font-medium text-gray-900">{getFirstName(emp.name)}</td>}
-                      {isColVisible('Last Name') && <td className="px-3 py-3 text-gray-700">{getLastName(emp.name)}</td>}
-                      {isColVisible('Nick name') && <td className="px-3 py-3 text-gray-700">{emp.nickname || getFirstName(emp.name)}</td>}
-                      {isColVisible('Email address') && <td className="px-3 py-3 text-gray-700">{emp.email}</td>}
-                      {isColVisible('Department') && <td className="px-3 py-3 text-gray-700">{emp.department}</td>}
-                      {isColVisible('Designation') && <td className="px-3 py-3 text-gray-700">{emp.designation}</td>}
+                    <tr key={emp.id} className="border-b border-gray-200 hover:bg-gray-50/60 transition-colors">
+                      <td className="px-3 py-3 border-r border-gray-100"><input type="checkbox" className="rounded border-gray-300 w-3.5 h-3.5" /></td>
+                      <td className="px-3 py-3 border-r border-gray-100"><div className={`w-8 h-8 rounded-full ${color} flex items-center justify-center text-white text-[10px] font-semibold`}>{initials}</div></td>
+                      {isColVisible('Employee ID') && <td className="px-3 py-3 border-r border-gray-100"><button onClick={() => navigate(`/employee-management/employees/${emp.id}`)} className="text-gray-800 hover:text-indigo-600 font-medium">{emp.id}</button></td>}
+                      {isColVisible('First Name') && <td className="px-3 py-3 text-gray-800 border-r border-gray-100">{getFirstName(emp.name)}</td>}
+                      {isColVisible('Last Name') && <td className="px-3 py-3 text-gray-800 border-r border-gray-100">{getLastName(emp.name)}</td>}
+                      {isColVisible('Nick name') && <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{emp.nickname || getFirstName(emp.name)}</td>}
+                      {isColVisible('Email address') && <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{emp.email}</td>}
+                      {isColVisible('Department') && <td className="px-3 py-3 text-gray-800 border-r border-gray-100">{emp.department}</td>}
+                      {isColVisible('Designation') && <td className="px-3 py-3 text-gray-800 border-r border-gray-100">{emp.designation}</td>}
 
-                      {isColVisible('Employment Type') && <td className="px-3 py-3 text-gray-700">{emp.type}</td>}
-                      {isColVisible('Employee Status') && <td className="px-3 py-3"><span className={`font-medium ${statusColors[emp.status] || 'text-gray-500'}`}>{emp.status}</span></td>}
-                      {isColVisible('Source of Hire') && <td className="px-3 py-3 text-gray-400">{emp.sourceOfHire || '-'}</td>}
-                      {isColVisible('Date of Joining') && <td className="px-3 py-3 text-gray-700">{emp.joinDate}</td>}
-                      {isColVisible('Current Experience') && <td className="px-3 py-3 text-gray-700">{calcExp(emp.joinDate)}</td>}
-                      {isColVisible('Total Experience') && <td className="px-3 py-3 text-gray-700">{emp.totalExperience || '-'}</td>}
+                      {isColVisible('Employment Type') && <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{emp.type}</td>}
+                      {isColVisible('Employee Status') && <td className="px-3 py-3 border-r border-gray-100"><span className={`font-semibold text-[12px] ${statusColors[emp.status] || 'text-gray-500'}`}>{emp.status}</span></td>}
+                      {isColVisible('Source of Hire') && <td className="px-3 py-3 text-gray-400 border-r border-gray-100">{emp.sourceOfHire || '-'}</td>}
+                      {isColVisible('Date of Joining') && <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{emp.joinDate}</td>}
+                      {isColVisible('Current Experience') && <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{calcExp(emp.joinDate)}</td>}
+                      {isColVisible('Total Experience') && <td className="px-3 py-3 text-gray-600 border-r border-gray-100">{emp.totalExperience || '-'}</td>}
                       <td className="px-3 py-3">
                         <div className="relative">
                           <button onClick={(e) => { e.stopPropagation(); setActionMenuId(actionMenuId === emp.id ? null : emp.id); }} className="p-1 rounded hover:bg-gray-100 text-gray-400 hover:text-gray-600">
@@ -257,36 +257,53 @@ export default function EmployeesTab() {
               </tbody>
             </table>
           </div>
-          <p className="text-sm text-gray-500 mt-3">Showing {filtered.length} employee(s)</p>
+          <div className="flex items-center justify-between mt-3 px-1">
+            <p className="text-[11px] text-gray-400">Showing 1 to {Math.min(25, filtered.length)} of {filtered.length} results</p>
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-gray-400">Rows per page:</span>
+                <select className="px-1.5 py-0.5 border border-gray-200 rounded text-[11px] bg-white text-gray-600">
+                  <option>25</option>
+                  <option>50</option>
+                  <option>100</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="text-[11px] text-gray-400">Page 1 of {Math.ceil(filtered.length / 25)}</span>
+                <button className="p-1 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30" disabled>&lt;</button>
+                <button className="p-1 rounded hover:bg-gray-100 text-gray-400 disabled:opacity-30" disabled={filtered.length <= 25}>&gt;</button>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Filter Panel */}
         {showFilter && (
-          <div className="w-72 ml-4 bg-white rounded-lg border border-gray-200 p-4 shrink-0 self-start sticky top-4 max-h-[80vh] overflow-y-auto">
-            <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-semibold text-gray-900">Filter</h3>
-              <button onClick={() => setShowFilter(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={16} /></button>
+          <div className="w-64 ml-3 bg-white rounded-lg border border-gray-200 p-3 shrink-0 self-start sticky top-4 max-h-[80vh] overflow-y-auto">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-[12px] font-semibold text-gray-800">Filter</h3>
+              <button onClick={() => setShowFilter(false)} className="p-1 text-gray-400 hover:text-gray-600"><X size={14} /></button>
             </div>
-            <div className="relative mb-4">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
-              <input className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg text-sm" placeholder="Search" value={filterSearch} onChange={e => setFilterSearch(e.target.value)} />
+            <div className="relative mb-3">
+              <Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+              <input className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-md text-[12px] bg-gray-50 focus:bg-white focus:outline-none focus:ring-1 focus:ring-indigo-500" placeholder="Search" value={filterSearch} onChange={e => setFilterSearch(e.target.value)} />
             </div>
 
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                <ChevronDown size={12} /> System filters
+            <div className="mb-3">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <ChevronDown size={10} /> System filters
               </p>
-              <div className="space-y-3 pl-1">
+              <div className="space-y-2 pl-1">
                 <div>
-                  <label className="text-xs text-gray-600 mb-1 block">Department</label>
-                  <select className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bg-white" value={filterDept} onChange={e => setFilterDept(e.target.value)}>
+                  <label className="text-[11px] text-gray-500 mb-1 block">Department</label>
+                  <select className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-[12px] bg-white" value={filterDept} onChange={e => setFilterDept(e.target.value)}>
                     <option value="">All Departments</option>
                     {departments.map(d => <option key={d.id} value={d.name}>{d.name}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="text-xs text-gray-600 mb-1 block">Location</label>
-                  <select className="w-full px-2 py-1.5 border border-gray-300 rounded text-sm bg-white" value={filterLocation} onChange={e => setFilterLocation(e.target.value)}>
+                  <label className="text-[11px] text-gray-500 mb-1 block">Location</label>
+                  <select className="w-full px-2 py-1.5 border border-gray-200 rounded-md text-[12px] bg-white" value={filterLocation} onChange={e => setFilterLocation(e.target.value)}>
                     <option value="">All Locations</option>
                     {locations.map(l => <option key={l} value={l}>{l}</option>)}
                   </select>
@@ -294,23 +311,23 @@ export default function EmployeesTab() {
               </div>
             </div>
 
-            <div className="mb-4">
-              <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
-                <ChevronDown size={12} /> Fields
+            <div className="mb-3">
+              <p className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-2 flex items-center gap-1">
+                <ChevronDown size={10} /> Fields
               </p>
-              <div className="space-y-1.5 pl-1 max-h-60 overflow-y-auto">
+              <div className="space-y-1 pl-1 max-h-52 overflow-y-auto">
                 {allColumns.map(col => (
-                  <label key={col} className="flex items-center gap-2 text-sm text-gray-700 cursor-pointer hover:text-gray-900">
-                    <input type="checkbox" className="rounded border-gray-300 text-indigo-600" checked={visibleColumns.has(col)} onChange={() => toggleColumn(col)} />
+                  <label key={col} className="flex items-center gap-2 text-[12px] text-gray-600 cursor-pointer hover:text-gray-800">
+                    <input type="checkbox" className="rounded border-gray-300 text-indigo-600 w-3.5 h-3.5" checked={visibleColumns.has(col)} onChange={() => toggleColumn(col)} />
                     {col}
                   </label>
                 ))}
               </div>
             </div>
 
-            <div className="flex gap-2 pt-2 border-t border-gray-200">
-              <button onClick={() => { setFilterSearch(''); setFilterDept(''); setFilterLocation(''); setVisibleColumns(new Set(allColumns)); }} className="px-3 py-1.5 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-50">Reset</button>
-              <button onClick={() => setShowFilter(false)} className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Apply</button>
+            <div className="flex gap-2 pt-2 border-t border-gray-100">
+              <button onClick={() => { setFilterSearch(''); setFilterDept(''); setFilterLocation(''); setVisibleColumns(new Set(allColumns)); }} className="px-2.5 py-1 text-[11px] border border-gray-200 rounded-md text-gray-500 hover:bg-gray-50">Reset</button>
+              <button onClick={() => setShowFilter(false)} className="px-2.5 py-1 text-[11px] bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Apply</button>
             </div>
           </div>
         )}
@@ -395,13 +412,13 @@ export default function EmployeesTab() {
         </div>
       )}
 
-      {/* ===== ADD EMPLOYEE MODAL ===== */}
+      {/* ===== ADD EMPLOYEE MODAL — slides in from right ===== */}
       {showAddModal && (() => {
         const stepIcons = [User, Briefcase, Shield, Phone, Heart, GraduationCap, Building2, Users];
         return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
+        <div className="fixed inset-0 z-50 flex justify-end">
           <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={() => setShowAddModal(false)} />
-          <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl mx-4 max-h-[92vh] flex flex-col overflow-hidden">
+          <div className="relative bg-white shadow-2xl w-full max-w-3xl h-full flex flex-col overflow-hidden">
             {/* Header with gradient */}
             <div className="bg-gradient-to-r from-indigo-600 to-purple-600 px-6 py-5 shrink-0">
               <div className="flex items-center justify-between mb-1">
@@ -606,23 +623,24 @@ export default function EmployeesTab() {
                   <Field label="Date of Birth"><input className={inputCls} type="date" value={form.depDob} onChange={e => updateField('depDob', e.target.value)} /></Field>
                 </div>
               )}
-            </div>
 
-            {/* Footer */}
-            <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 shrink-0 rounded-b-2xl">
-              <div>
-                {activeFormSection > 0 && (
-                  <button onClick={() => setActiveFormSection(i => i - 1)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">Previous</button>
-                )}
-              </div>
-              <div className="flex gap-3">
-                <button onClick={() => { setForm(initialForm); setShowAddModal(false); }} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
-                {activeFormSection < formSections.length - 1 ? (
-                  <button onClick={() => setActiveFormSection(i => i + 1)} className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">Next</button>
-                ) : (
-                  <button onClick={handleSubmit} className="px-5 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">Add Employee</button>
-                )}
-              </div>
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-gray-50 shrink-0">
+            <div>
+              {activeFormSection > 0 && (
+                <button onClick={() => setActiveFormSection(i => i - 1)} className="px-4 py-2 text-sm border border-gray-300 rounded-lg text-gray-600 hover:bg-gray-100 transition-colors">Previous</button>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button onClick={() => { setForm(initialForm); setShowAddModal(false); }} className="px-4 py-2 text-sm text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-100 transition-colors">Cancel</button>
+              {activeFormSection < formSections.length - 1 ? (
+                <button onClick={() => setActiveFormSection(i => i + 1)} className="px-5 py-2 text-sm bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 font-medium transition-colors">Next</button>
+              ) : (
+                <button onClick={handleSubmit} className="px-5 py-2 text-sm bg-green-600 text-white rounded-lg hover:bg-green-700 font-medium transition-colors">Add Employee</button>
+              )}
             </div>
           </div>
         </div>
