@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { LayoutDashboard, Users, X, ChevronLeft, ChevronRight, ChevronDown, UserCog, BarChart3, Building2, Award, Clock, CalendarDays, ClipboardList, Calendar as CalendarIcon, FileBarChart } from 'lucide-react';
+import { LayoutDashboard, Users, X, ChevronLeft, ChevronRight, ChevronDown, UserCog, BarChart3, Building2, Award, Clock, CalendarDays, ClipboardList, Calendar as CalendarIcon, FileBarChart, CalendarPlus, CheckSquare, History, Scale, FileText } from 'lucide-react';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -23,12 +23,24 @@ const attendanceSubItems = [
   { to: '/attendance/reports', label: 'Reports', icon: FileBarChart },
 ];
 
+const leaveSubItems = [
+  { to: '/leave-management', label: 'Apply Leave', icon: CalendarPlus, end: true },
+  { to: '/leave-management/approvals', label: 'Approvals', icon: CheckSquare },
+  { to: '/leave-management/history', label: 'Leave History', icon: History },
+  { to: '/leave-management/balance', label: 'Leave Balance', icon: Scale },
+  { to: '/leave-management/policies', label: 'Leave Policies', icon: FileText },
+  { to: '/leave-management/holidays', label: 'Holiday Calendar', icon: CalendarDays },
+  { to: '/leave-management/reports', label: 'Reports', icon: BarChart3 },
+];
+
 export default function Sidebar({ isOpen, collapsed, onClose, onToggleCollapse }: SidebarProps) {
   const location = useLocation();
   const isEmpActive = location.pathname.startsWith('/employee-management');
-  const [empOpen, setEmpOpen] = useState(isEmpActive);
   const isAttendanceActive = location.pathname.startsWith('/attendance');
+  const isLeaveActive = location.pathname.startsWith('/leave-management');
+  const [empOpen, setEmpOpen] = useState(isEmpActive);
   const [attendanceOpen, setAttendanceOpen] = useState(isAttendanceActive);
+  const [leaveOpen, setLeaveOpen] = useState(isLeaveActive);
 
   const linkStyle = (isActive: boolean) => ({
     display: 'flex',
@@ -46,6 +58,87 @@ export default function Sidebar({ isOpen, collapsed, onClose, onToggleCollapse }
   });
 
   const width = collapsed ? 'w-[72px]' : 'w-[240px]';
+
+  const renderCollapsible = (
+    label: string,
+    icon: React.ElementType,
+    isActive: boolean,
+    isOpen: boolean,
+    setOpen: (fn: (o: boolean) => boolean) => void,
+    subItems: typeof empSubItems,
+    collapsedTo: string,
+  ) => {
+    const Icon = icon;
+    return !collapsed ? (
+      <>
+        <button
+          onClick={() => setOpen(o => !o)}
+          style={{
+            ...linkStyle(isActive && !isOpen),
+            width: '100%',
+            border: 'none',
+            cursor: 'pointer',
+            justifyContent: 'space-between',
+            backgroundColor: isActive ? '#eef2ff' : 'transparent',
+            color: isActive ? '#4338ca' : '#6b7280',
+          }}
+        >
+          <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <Icon size={18} />
+            <span>{label}</span>
+          </span>
+          <ChevronDown
+            size={16}
+            style={{
+              transition: 'transform 0.2s',
+              transform: isOpen ? 'rotate(180deg)' : 'rotate(0deg)',
+            }}
+          />
+        </button>
+        {isOpen && (
+          <div style={{ paddingLeft: 16, marginTop: 2 }}>
+            {subItems.map(sub => (
+              <NavLink
+                key={sub.to}
+                to={sub.to}
+                end={sub.end}
+                onClick={onClose}
+                style={({ isActive }) => ({
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 10,
+                  padding: '8px 12px',
+                  marginBottom: 1,
+                  borderRadius: 8,
+                  fontSize: 13,
+                  fontWeight: 400,
+                  textDecoration: 'none',
+                  transition: 'all 0.15s ease',
+                  backgroundColor: isActive ? '#e0e7ff' : 'transparent',
+                  color: isActive ? '#4338ca' : '#6b7280',
+                })}
+              >
+                <sub.icon size={15} />
+                <span>{sub.label}</span>
+              </NavLink>
+            ))}
+          </div>
+        )}
+      </>
+    ) : (
+      <NavLink
+        to={collapsedTo}
+        style={({ isActive }) => ({
+          ...linkStyle(isActive),
+          justifyContent: 'center',
+          padding: '10px',
+        })}
+        title={label}
+      >
+        <Icon size={18} />
+      </NavLink>
+    );
+  };
 
   return (
     <>
@@ -98,165 +191,13 @@ export default function Sidebar({ isOpen, collapsed, onClose, onToggleCollapse }
           </NavLink>
 
           {/* Employee Management - Collapsible */}
-          {!collapsed ? (
-            <>
-              <button
-                onClick={() => setEmpOpen(o => !o)}
-                style={{
-                  ...linkStyle(isEmpActive && !empOpen),
-                  width: '100%',
-                  border: 'none',
-                  cursor: 'pointer',
-                  justifyContent: 'space-between',
-                  backgroundColor: isEmpActive ? '#eef2ff' : 'transparent',
-                  color: isEmpActive ? '#4338ca' : '#6b7280',
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Users size={18} />
-                  <span>Employee Management</span>
-                </span>
-                <ChevronDown
-                  size={16}
-                  style={{
-                    transition: 'transform 0.2s',
-                    transform: empOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  }}
-                />
-              </button>
-
-              {/* Sub-items */}
-              {empOpen && (
-                <div style={{ paddingLeft: 16, marginTop: 2 }}>
-                  {empSubItems.map(sub => (
-                    <NavLink
-                      key={sub.to}
-                      to={sub.to}
-                      end={sub.end}
-                      onClick={onClose}
-                      style={({ isActive }) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 12px',
-                        marginBottom: 1,
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 400,
-                        textDecoration: 'none',
-                        transition: 'all 0.15s ease',
-                        backgroundColor: isActive ? '#e0e7ff' : 'transparent',
-                        color: isActive ? '#4338ca' : '#6b7280',
-                      })}
-                    >
-                      <sub.icon size={15} />
-                      <span>{sub.label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <NavLink
-              to="/employee-management"
-              style={({ isActive }) => ({
-                ...linkStyle(isActive),
-                justifyContent: 'center',
-                padding: '10px',
-              })}
-              title="Employee Management"
-            >
-              <Users size={18} />
-            </NavLink>
-          )}
+          {renderCollapsible('Employee Management', Users, isEmpActive, empOpen, setEmpOpen, empSubItems, '/employee-management')}
 
           {/* Attendance - Collapsible */}
-          {!collapsed ? (
-            <>
-              <button
-                onClick={() => setAttendanceOpen(o => !o)}
-                style={{
-                  ...linkStyle(isAttendanceActive && !attendanceOpen),
-                  width: '100%',
-                  border: 'none',
-                  cursor: 'pointer',
-                  justifyContent: 'space-between',
-                  backgroundColor: isAttendanceActive ? '#eef2ff' : 'transparent',
-                  color: isAttendanceActive ? '#4338ca' : '#6b7280',
-                }}
-              >
-                <span style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                  <Clock size={18} />
-                  <span>Attendance</span>
-                </span>
-                <ChevronDown
-                  size={16}
-                  style={{
-                    transition: 'transform 0.2s',
-                    transform: attendanceOpen ? 'rotate(180deg)' : 'rotate(0deg)',
-                  }}
-                />
-              </button>
+          {renderCollapsible('Attendance', Clock, isAttendanceActive, attendanceOpen, setAttendanceOpen, attendanceSubItems, '/attendance')}
 
-              {/* Sub-items */}
-              {attendanceOpen && (
-                <div style={{ paddingLeft: 16, marginTop: 2 }}>
-                  {attendanceSubItems.map(sub => (
-                    <NavLink
-                      key={sub.to}
-                      to={sub.to}
-                      end={sub.end}
-                      onClick={onClose}
-                      style={({ isActive }) => ({
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 10,
-                        padding: '8px 12px',
-                        marginBottom: 1,
-                        borderRadius: 8,
-                        fontSize: 13,
-                        fontWeight: 400,
-                        textDecoration: 'none',
-                        transition: 'all 0.15s ease',
-                        backgroundColor: isActive ? '#e0e7ff' : 'transparent',
-                        color: isActive ? '#4338ca' : '#6b7280',
-                      })}
-                    >
-                      <sub.icon size={15} />
-                      <span>{sub.label}</span>
-                    </NavLink>
-                  ))}
-                </div>
-              )}
-            </>
-          ) : (
-            <NavLink
-              to="/attendance"
-              style={({ isActive }) => ({
-                ...linkStyle(isActive),
-                justifyContent: 'center',
-                padding: '10px',
-              })}
-              title="Attendance"
-            >
-              <Clock size={18} />
-            </NavLink>
-          )}
-
-          {/* Leave */}
-          <NavLink
-            to="/leave"
-            onClick={onClose}
-            style={({ isActive }) => ({
-              ...linkStyle(isActive),
-              justifyContent: collapsed ? 'center' : undefined,
-              padding: collapsed ? '10px' : '10px 14px',
-            })}
-            title={collapsed ? 'Leave' : undefined}
-          >
-            <CalendarDays size={18} />
-            {!collapsed && <span className="flex-1 truncate">Leave</span>}
-          </NavLink>
+          {/* Leave Management - Collapsible */}
+          {renderCollapsible('Leave Management', CalendarDays, isLeaveActive, leaveOpen, setLeaveOpen, leaveSubItems, '/leave-management')}
         </nav>
 
         {/* Collapse toggle */}
