@@ -28,12 +28,11 @@ interface ModuleItem {
 
 const allModules: ModuleItem[] = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, to: '/', end: true, category: 'General' },
-  { id: 'employee-management', label: 'Employee Management', icon: Users, to: '/employee-management', category: 'General' },
-  { id: 'employees', label: 'Employees', icon: Users, to: '/employee-management', category: 'Management' },
-  { id: 'user-operations', label: 'User-specific Operations', icon: UserCog, to: '/employee-management/user-operations', category: 'Management' },
-  { id: 'insights', label: 'Insights', icon: BarChart3, to: '/employee-management/insights', category: 'Management' },
-  { id: 'departments', label: 'Departments', icon: Building2, to: '/employee-management/departments', category: 'Management' },
-  { id: 'designations', label: 'Designations', icon: Award, to: '/employee-management/designations', category: 'Management' },
+  { id: 'employees', label: 'Employees', icon: Users, to: '/employee-management', end: true, category: 'Employee Management' },
+  { id: 'user-operations', label: 'User-specific Operations', icon: UserCog, to: '/employee-management/user-operations', category: 'Employee Management' },
+  { id: 'insights', label: 'Insights', icon: BarChart3, to: '/employee-management/insights', category: 'Employee Management' },
+  { id: 'departments', label: 'Departments', icon: Building2, to: '/employee-management/departments', category: 'Employee Management' },
+  { id: 'designations', label: 'Designations', icon: Award, to: '/employee-management/designations', category: 'Employee Management' },
 ];
 
 const defaultFavourites = ['dashboard', 'employee-management'];
@@ -80,7 +79,7 @@ function AllModulesPanel({ onClose }: { onClose: () => void }) {
   );
 
   const generalModules = filteredModules.filter(m => m.category === 'General');
-  const managementModules = filteredModules.filter(m => m.category === 'Management');
+  const employeeManagementModules = filteredModules.filter(m => m.category === 'Employee Management');
   const favouriteModules = allModules.filter(m => favourites.includes(m.id));
 
   return (
@@ -229,17 +228,17 @@ function AllModulesPanel({ onClose }: { onClose: () => void }) {
               </div>
             </div>
 
-            {/* Management */}
+            {/* Employee Management */}
             <div style={{ flex: 1 }}>
               <div style={{
                 fontSize: 11, fontWeight: 600, color: '#9ca3af',
                 textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 8,
                 display: 'flex', alignItems: 'center', gap: 6,
               }}>
-                <Building2 size={12} /> Management
+                <Users size={12} /> Employee Management
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                {managementModules.map(mod => (
+                {employeeManagementModules.map(mod => (
                   <div key={mod.id}
                     onClick={() => handleModuleClick(mod.to)}
                     style={{
@@ -307,6 +306,33 @@ export default function AppLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [allModulesOpen, setAllModulesOpen] = useState(false);
+  const [favourites, setFavourites] = useState<string[]>(() => {
+    const saved = localStorage.getItem('module-favourites');
+    return saved ? JSON.parse(saved) : defaultFavourites;
+  });
+
+  // Listen for favourite changes from the panel
+  useEffect(() => {
+    const handleStorage = () => {
+      const saved = localStorage.getItem('module-favourites');
+      if (saved) setFavourites(JSON.parse(saved));
+    };
+    window.addEventListener('storage', handleStorage);
+    return () => window.removeEventListener('storage', handleStorage);
+  }, []);
+
+  // Re-read favourites when the panel closes
+  useEffect(() => {
+    if (!allModulesOpen) {
+      const saved = localStorage.getItem('module-favourites');
+      if (saved) setFavourites(JSON.parse(saved));
+    }
+  }, [allModulesOpen]);
+
+  // Tabs are driven by favourites — Dashboard first if starred, then Employee Management items
+  const tabItems = allModules
+    .filter(m => favourites.includes(m.id))
+    .map(m => ({ to: m.to, label: m.label, icon: m.icon, end: m.end }));
 
   // ─── MODERN LAYOUT: Horizontal tabs at top ───
   if (layout === 'modern') {
@@ -337,7 +363,7 @@ export default function AppLayout() {
               overflowX: 'auto',
               position: 'relative',
             }}>
-              {navItems.map(item => (
+              {tabItems.map(item => (
                 <NavLink
                   key={item.to}
                   to={item.to}
@@ -402,7 +428,7 @@ export default function AppLayout() {
           }} />
         </div>
 
-        <main style={{ padding: '16px 24px', maxWidth: 1440, margin: '0 auto', minHeight: 'calc(100vh - 120px)' }}>
+        <main style={{ padding: '16px 24px', minHeight: 'calc(100vh - 120px)' }}>
           <Outlet />
         </main>
 
