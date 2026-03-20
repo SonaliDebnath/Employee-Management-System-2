@@ -24,7 +24,10 @@ import SubDepartmentDetail from '../pages/admin/SubDepartmentDetail';
 import UserProfile from '../pages/admin/UserProfile';
 
 // Attendance
-import AdminAttendance from '../pages/admin/Attendance';
+import AttendanceLayout from '../pages/admin/AttendanceLayout';
+import AttendanceRecordsTab from '../pages/admin/tabs/AttendanceRecordsTab';
+import AttendanceCalendarTab from '../pages/admin/tabs/AttendanceCalendarTab';
+import AttendanceReportsTab from '../pages/admin/tabs/AttendanceReportsTab';
 
 // Leave Management
 import LeaveManagement from '../pages/admin/LeaveManagement';
@@ -69,7 +72,11 @@ export default function AppRoutes() {
           <Route path="user-operations/:id" element={<UserProfile />} />
         </Route>
 
-        <Route path="/attendance" element={<AdminAttendance />} />
+        <Route path="/attendance" element={<AttendanceLayout />}>
+          <Route index element={<AttendanceRecordsTab />} />
+          <Route path="calendar" element={<AttendanceCalendarTab />} />
+          <Route path="reports" element={<AttendanceReportsTab />} />
+        </Route>
 
         <Route path="/leave-management" element={<LeaveManagement />}>
           <Route index element={<ApplyLeaveTab />} />
